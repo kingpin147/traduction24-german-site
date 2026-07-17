@@ -1,0 +1,2312 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Traduction Express - Commander un document</title>
+  <!-- <script src="./langChange.js" defer></script> -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #eef1f7;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #1a2b40;
+      min-height: 100vh;
+    }
+
+    /* ─── STEP INDICATOR ─── */
+    .step-header {
+      background: transparent;
+      border-bottom: 1px solid #e8edf5;
+      padding: 0 4rem;
+    }
+
+
+    /* thisi is mine */
+    .card-upload {
+      border: 2px dashed hsl(215 16% 88% / 0.6) !important;
+      background: white;
+      border-radius: 16px;
+      padding: 1.6rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-second {
+      background: transparent;
+      border-radius: 16px;
+    }
+
+    #selectedDocsCard {
+      background: transparent;
+      border-radius: 16px;
+      margin-bottom: 1rem;
+      border: none !important;
+      margin-top: 1.5rem;
+    }
+
+    /* thisi is mine */
+
+    .step-indicator {
+      max-width: 700px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      padding: 1.2rem 0;
+    }
+
+    .step-node {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #9aaabf;
+      white-space: nowrap;
+    }
+
+    .step-node .circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #e8edf5;
+      color: #9aaabf;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      border: 2px solid #e8edf5;
+    }
+
+    .step-node.active .circle {
+      background: #023d79;
+      color: white;
+      border-color: #023d79;
+    }
+
+    .step-node.active {
+      color: #023d79;
+    }
+
+    .step-node.done .circle {
+      background: #00bd61;
+      border-color: #00bd61;
+      color: white;
+    }
+
+    .step-node.done {
+      color: #00bd61;
+    }
+
+    .step-connector {
+      flex: 1;
+      height: 2px;
+      background: #e8edf5;
+      margin: 0 0.5rem;
+    }
+
+    .step-connector.done {
+      background: #00bd61;
+    }
+
+    /* ─── LAYOUT ─── */
+    .page-body {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+    }
+
+    .main-col {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .side-col {
+      width: 420px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 1rem;
+    }
+
+    /* ─── CARDS ─── */
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 1.6rem;
+      border: 1px solid #e4eaf3;
+      margin-bottom: 1rem;
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #023d79;
+      margin-bottom: 1.2rem;
+    }
+
+    /* ─── UPLOAD AREA ─── */
+    .upload-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .upload-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 1.2rem;
+      border: 1.5px solid #e4eaf3;
+      border-radius: 12px;
+      cursor: pointer;
+      background: white;
+      transition: border-color 0.2s, background 0.2s;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .upload-btn:hover {
+      border-color: #023d79;
+      background: #f5f8fd;
+    }
+
+    .upload-btn.camera {
+      background: #eefaf4;
+      border-color: #a8e8c8;
+    }
+
+    .upload-btn .icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .upload-btn.camera .icon-wrap {
+      background: #00bd61;
+      color: white;
+    }
+
+    .upload-btn.file .icon-wrap {
+      background: #f0f4fa;
+      color: #023d79;
+    }
+
+    .upload-btn .btn-text strong {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #023d79;
+    }
+
+    .upload-btn .btn-text span {
+      font-size: 0.75rem;
+      color: #6e8096;
+    }
+
+    .upload-hint {
+      text-align: center;
+      font-size: 0.75rem;
+      color: #8a99aa;
+      margin-bottom: 1.2rem;
+    }
+
+    .file-chosen {
+      font-size: 0.8rem;
+      color: #00bd61;
+      background: #eefaf4;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      display: inline-block;
+      margin-top: 0.5rem;
+    }
+
+    /* ─── TABS ─── */
+    .tabs-nav {
+      display: flex;
+      gap: 0;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 0.65rem 1.1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #7a8ea0;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      white-space: nowrap;
+      font-family: inherit;
+      transition: color 0.15s;
+    }
+
+    .tab-btn.active {
+      color: #00BD61;
+      background: #023d79;
+      border-radius: 9999px;
+    }
+
+    .tab-pane {
+      display: none;
+    }
+
+    .tab-pane.active-pane {
+      display: block;
+    }
+
+    /* ─── DOCUMENT GRID ─── */
+    .docs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+    }
+
+    .doc-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border: 1px solid #e4eaf3;
+      border-radius: 10px;
+      cursor: pointer;
+      background: white;
+      transition: all 0.15s;
+    }
+
+    .doc-item:hover {
+      border-color: #00BD61;
+      background: white;
+    }
+
+    .doc-item .doc-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .doc-name {
+      font-weight: 700;
+      font-size: 0.82rem;
+      color: #023d79;
+      display: block;
+    }
+
+    .doc-sub {
+      font-size: 0.7rem;
+      color: #7a8ea0;
+      display: block;
+      margin-top: 0.1rem;
+    }
+
+    .doc-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .doc-price-tag {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #0E854B;
+    }
+
+    .doc-price-sub {
+      font-size: 0.65rem;
+      color: #0E854B;
+      display: block;
+      text-align: right;
+    }
+
+    .doc-add-btn {
+      width: 16px;
+      height: 16px;
+      color: #00BD61;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+      background-color: transparent !important;
+    }
+
+    .doc-add-btn:hover {
+      background: #00bd61;
+    }
+
+    /* ─── SELECTED DOCS LIST (Step 1 bottom) ─── */
+    .selected-docs-section {
+      margin-top: 1rem;
+    }
+
+    .selected-docs-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #023d79;
+      margin-bottom: 0.6rem;
+    }
+
+    .selected-doc-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: #ffffff;
+      border-radius: 10px;
+      margin-bottom: 0.4rem;
+      font-size: 0.85rem;
+    }
+
+    .selected-doc-left {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .doc-icon {
+      color: #00bd61;
+      font-size: 0.9rem;
+    }
+
+    .selected-doc-name {
+      font-weight: 600;
+      color: #023d79;
+    }
+
+    .selected-doc-right {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .selected-doc-price {
+      font-weight: 700;
+      color: #023d79;
+    }
+
+    .remove-doc-btn {
+      background: none;
+      border: none;
+      color: #9aaabf;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .remove-doc-btn:hover {
+      color: #e53e3e;
+    }
+
+    /* ─── STEP ACTIONS ─── */
+    .step-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1.5rem;
+    }
+
+    .btn-back {
+      background: white;
+      border: 1.5px solid #e4eaf3;
+      color: #4a627a;
+      padding: 0.5rem 1rem;
+      border-radius: 7px;
+      font-weight: 600;
+      font-size: .875rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-back:hover {
+      border-color: #00BD61;
+      background-color: #00BD61;
+      color: #023d79;
+    }
+
+    .btn-next {
+      background: #023d79;
+      color: #00BD61;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 7px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-next:hover {
+      background: #012c5a;
+    }
+
+    .btn-order {
+      background: #00bd61;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-order:hover {
+      background: #009e50;
+    }
+
+    /* ─── STEP 2 SPECIFIC ─── */
+    .lang-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .lang-field label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #4a627a;
+      margin-bottom: 0.4rem;
+    }
+
+    .lang-select {
+      width: 100%;
+      padding: 0.65rem 1rem;
+      border: 1.5px solid #e4eaf3;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #023d79;
+      background: white;
+      cursor: pointer;
+    }
+
+    .lang-select:hover {
+      outline: none;
+      border-color: #00bd61;
+    }
+
+    .options-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.8rem;
+    }
+
+    .option-card {
+      border: 1.5px solid #e4eaf3;
+      border-radius: 12px;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: white;
+    }
+
+    .option-card:hover {
+      border-color: #00bd61;
+    }
+
+    .option-card.selected {
+      border-color: #00bd61;
+      background: #f0fdf4;
+    }
+
+    .option-card .opt-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #023d79;
+    }
+
+    .option-card .opt-sub {
+      font-size: 0.75rem;
+      color: #6e8096;
+      margin-top: 0.2rem;
+    }
+
+    .option-card .opt-badge {
+      font-size: 0.7rem;
+      color: #00BD61;
+      margin-top: 0.25rem;
+      font-weight: 600;
+    }
+
+    .shipping-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+
+    .ship-card {
+      border: 1.5px solid #e4eaf3;
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: white;
+    }
+
+    .ship-card:hover {
+      border-color: #023d79;
+    }
+
+    .ship-card.selected {
+      border-color: #00bd61;
+      background: #f0fdf4;
+    }
+
+    .ship-card .ship-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #023d79;
+    }
+
+    .ship-card .ship-price {
+      font-size: 0.8rem;
+      color: #6e8096;
+      margin-top: 0.2rem;
+    }
+
+    /* ─── STEP 3 SPECIFIC ─── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-field label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #4a627a;
+      margin-bottom: 0.4rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: 1.5px solid #e4eaf3;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: #023d79;
+      background: white;
+      transition: border-color 0.15s;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #00bd61;
+    }
+
+    .form-input::placeholder {
+      color: #b0bec8;
+    }
+
+    /* updated card 
+
+*/
+    /* Page stepper in selected docs list */
+    .page-stepper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+      margin-right: 0.8rem;
+    }
+
+    .stepper-btn {
+      width: 26px;
+      height: 26px;
+      border: 1.5px solid #e4eaf3;
+      border-radius: 6px;
+      background: white;
+      color: #023d79;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      line-height: 1;
+      transition: border-color 0.15s;
+    }
+
+    .stepper-btn:hover {
+      border-color: #00bd61;
+      color: #00bd61;
+    }
+
+    .stepper-input {
+      width: 36px;
+      height: 26px;
+      text-align: center;
+      border: 1.5px solid #e4eaf3;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #023d79;
+    }
+
+    .stepper-input:focus {
+      outline: none;
+      border-color: #00bd61;
+    }
+
+    .stepper-pages-label {
+      font-size: 0.8rem;
+      color: #7a8ea0;
+      white-space: nowrap;
+    }
+
+    .stepper-price {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #023d79;
+      white-space: nowrap;
+      min-width: 40px;
+      text-align: right;
+    }
+
+    /* ------------------------------------ */
+    /* ─── STEP 4 SPECIFIC ─── */
+    .recap-doc-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid #f0f4fa;
+    }
+
+    .recap-doc-name {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #023d79;
+    }
+
+    .recap-doc-sub {
+      font-size: 0.75rem;
+      color: #7a8ea0;
+      margin-top: 0.15rem;
+    }
+
+    .recap-doc-price {
+      font-weight: 700;
+      color: #023d79;
+      font-size: 0.9rem;
+    }
+
+    .recap-meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem 2rem;
+      margin-top: 0.8rem;
+      font-size: 0.85rem;
+    }
+
+    .recap-meta-item {
+      color: #4a627a;
+    }
+
+    .recap-meta-item strong {
+      color: #023d79;
+    }
+
+    .recap-notice {
+      background-color: hsl(151, 100%, 37%, 0.05);
+      border-radius: 10px;
+      padding: 0.8rem 1rem;
+      font-size: 0.78rem;
+      color: #4a627a;
+      margin-top: 0.8rem;
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+    }
+
+    .recap-notice i {
+      color: #00bd61;
+      margin-top: 0.1rem;
+      flex-shrink: 0;
+    }
+
+    /* ─── RIGHT SIDEBAR ─── */
+    .sidebar-card {
+      background: white;
+      border-radius: 16px;
+      padding: 1.4rem;
+      border: 1px solid #e4eaf3;
+    }
+
+    .sidebar-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #023d79;
+      margin-bottom: 1rem;
+      padding-bottom: 0.8rem;
+      border-bottom: 1px solid #f0f4fa;
+    }
+
+    .price-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      padding: 0.4rem 0;
+      color: #4a627a;
+    }
+
+    .price-line .pl-name {
+      color: #1a2b40;
+    }
+
+    .price-total {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: 1rem;
+      color: #023d79;
+      margin-top: 0.8rem;
+      padding-top: 0.8rem;
+      border-top: 2px solid #e4eaf3;
+    }
+
+    .price-total .amount {
+      color: #00bd61;
+    }
+
+    .price-shipping {
+      font-size: 0.72rem;
+      color: #8a99aa;
+      margin-top: 0.3rem;
+    }
+
+    .trust-list {
+      margin: 1rem 0;
+    }
+
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: #4a627a;
+      padding: 0.25rem 0;
+    }
+
+    .trust-item i {
+      color: #00bd61;
+      font-size: 0.75rem;
+    }
+
+    .payment-section {
+      margin-top: 1rem;
+      padding-top: 0.8rem;
+      border-top: 1px solid #f0f4fa;
+    }
+
+    .payment-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #8a99aa;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.7rem;
+    }
+
+    .payment-icons-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.5rem;
+    }
+
+    .pay-icon {
+      border: 1px solid #e4eaf3;
+      border-radius: 8px;
+      padding: 0.6rem 0.3rem;
+      text-align: center;
+      font-size: 0.7rem;
+      color: #4a627a;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .pay-icon svg {
+      display: block;
+      color: #023d79;
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 860px) {
+      .page-body {
+        flex-direction: column;
+      }
+
+      .side-col {
+        width: 100%;
+        position: relative;
+      }
+
+      .docs-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .lang-row,
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .options-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .step-node .step-label {
+        display: none;
+      }
+    }
+
+    /* ─── FIX FOR VERY SMALL SCREENS (≤ 360px / 320px / 300px) ─── */
+    @media (max-width: 360px) {
+      .step-header {
+        padding: 0 1rem;
+        /* reduce from 4rem */
+      }
+
+      .step-node {
+        white-space: normal;
+        /* allow wrapping */
+      }
+
+      .page-body {
+        padding: 1rem 0.5rem;
+        /* tighter spacing */
+      }
+
+      .card,
+      .card-upload {
+        padding: 1rem;
+        /* reduce inner spacing */
+      }
+
+      .upload-row {
+        flex-direction: column;
+        /* stack buttons */
+      }
+
+      .upload-btn {
+        width: 100%;
+      }
+
+      .docs-grid {
+        grid-template-columns: 1fr;
+        /* already set, reinforce */
+      }
+
+      .options-row {
+        grid-template-columns: 1fr;
+      }
+
+      .shipping-row {
+        grid-template-columns: 1fr;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .side-col {
+        width: 100%;
+      }
+
+      .step-indicator {
+        overflow-x: auto;
+        /* prevent cutoff */
+      }
+
+      .payment-icons-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.3rem;
+      }
+
+      .page-body {
+        padding: 1rem;
+        padding-bottom: 4rem;
+        /* prevents bottom cutoff */
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- STEP INDICATOR -->
+  <div class="step-header">
+    <div class="step-indicator">
+      <div class="step-node active" id="sn1">
+        <div class="circle" id="sc1">1</div>
+        <span class="step-label" data-key="step_docs">Documents</span>
+      </div>
+
+      <div class="step-connector" id="conn1"></div>
+
+      <div class="step-node" id="sn2">
+        <div class="circle" id="sc2">2</div>
+        <span class="step-label" data-key="step_lang">Langues</span>
+      </div>
+
+      <div class="step-connector" id="conn2"></div>
+
+      <div class="step-node" id="sn3">
+        <div class="circle" id="sc3">3</div>
+        <span class="step-label" data-key="step_contact">Contact</span>
+      </div>
+
+      <div class="step-connector" id="conn3"></div>
+
+      <div class="step-node" id="sn4">
+        <div class="circle" id="sc4">4</div>
+        <span class="step-label" data-key="step_summary">Récapitulatif</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-body">
+    <!-- ═══════════════ MAIN COLUMN ═══════════════ -->
+    <div class="main-col">
+
+      <!-- ─── STEP 1 ─── -->
+      <div id="step1" class="step-content">
+
+        <!-- Upload -->
+        <div class="card-upload">
+          <div class="upload-row">
+            <label class="upload-btn camera" for="fileInputCamera" style="cursor:pointer;">
+              <div
+                style="background: hsl(151 100% 37% / 15%); width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+                <i class="fas fa-camera" style="color: #00BD61; font-size: 20px;"></i>
+              </div>
+              <div class="btn-text">
+                <strong data-key="upload_scan_title">Scanner maintenant</strong>
+                <span data-key="upload_scan_desc">Ouvrir la caméra et photographier le document</span>
+              </div>
+            </label>
+            <input type="file" id="fileInputCamera" accept="image/*" capture="environment" style="display:none">
+
+            <label class="upload-btn file" for="fileInput" style="cursor:pointer;">
+              <div class="icon-wrap"><i class="fas fa-folder-open"></i></div>
+              <div class="btn-text">
+                <strong data-key="upload_file_title">Télécharger un fichier</strong>
+                <span data-key="upload_file_desc">PDF, JPG ou PNG depuis votre appareil</span>
+              </div>
+            </label>
+            <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" style="display:none">
+          </div>
+
+          <div class="upload-hint" data-key="upload_hint">
+            ou glissez un fichier ici · PDF, JPG, PNG ou TIFF · Max. 10 Mo
+          </div>
+
+          <div id="fileNameDisplay" class="file-chosen" style="display:none;"></div>
+        </div>
+
+        <!-- Document type -->
+        <div class="card-second">
+          <div class="card-title" data-key="choose_doc_title">Choisir le type de document</div>
+
+          <div class="tabs-nav">
+            <button class="tab-btn active" data-tab="tab1" data-key="tab_cert">Certificats &amp; diplômes</button>
+            <button class="tab-btn" data-tab="tab2" data-key="tab_civil">Actes &amp; état civil</button>
+            <button class="tab-btn" data-tab="tab3" data-key="tab_personal">Documents personnels</button>
+            <button class="tab-btn" data-tab="tab4" data-key="tab_other">Autres documents</button>
+          </div>
+
+          <div id="tab1" class="tab-pane active-pane">
+            <div class="docs-grid">
+
+              <div class="doc-item" data-name="Certificats scolaires / Bulletins" data-price-eur="20"
+                data-price-mad="200" data-id="certificatScolaire">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_certificates">Certificats scolaires / Bulletins</span>
+                  <span class="doc-sub" data-key="doc_certificates_sub">Certificats scolaires et bulletins</span>
+                </div>
+                <div class="doc-right">
+                  <div><span class="doc-price-tag">20 €</span><span class="doc-price-sub">200 DH</span></div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+              <div class="doc-item" data-name="Baccalauréat" data-price-eur="20" data-price-mad="200"
+                data-id="baccalaureat">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_bac">Baccalauréat</span>
+                  <span class="doc-sub" data-key="doc_bac_sub">Certificats du baccalauréat</span>
+                </div>
+                <div class="doc-right">
+                  <div><span class="doc-price-tag">20 €</span><span class="doc-price-sub">200 DH</span></div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+              <div class="doc-item" data-name="Relevé de notes du baccalauréat" data-price-eur="20" data-price-mad="200"
+                data-id="releveBac">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_releve_bac">Relevé de notes du baccalauréat</span>
+                  <span class="doc-sub" data-key="doc_releve_bac_sub">Relevé de notes du baccalauréat</span>
+                </div>
+                <div class="doc-right">
+                  <div><span class="doc-price-tag">20 €</span><span class="doc-price-sub">200 DH</span></div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+              <div class="doc-item" data-name="Diplôme de licence" data-price-eur="20" data-price-mad="200"
+                data-id="licence">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_licence">Diplôme de licence</span>
+                  <span class="doc-sub" data-key="doc_licence_sub">Diplômes de licence</span>
+                </div>
+                <div class="doc-right">
+                  <div><span class="doc-price-tag">20 €</span><span class="doc-price-sub">200 DH</span></div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+              <div class="doc-item" data-name="Relevé de notes de licence" data-price-eur="20" data-price-mad="200"
+                data-id="releveLicence" data-has-pages="true">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_releve_licence">Relevé de notes de licence</span>
+                  <span class="doc-sub" data-key="doc_releve_licence_sub">Relevé de notes de licence</span>
+                </div>
+                <div class="doc-right">
+                  <div><span class="doc-price-tag">20 €</span><span class="doc-price-sub">200 DH</span></div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+              <div class="doc-item" data-name="Diplôme de master" data-price-eur="20" data-price-mad="200"
+                data-id="master">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_master">Diplôme de master</span>
+                  <span class="doc-sub" data-key="doc_master_sub">Diplômes de master</span>
+                </div>
+                <div class="doc-right">
+                  <div><span class="doc-price-tag">20 €</span><span class="doc-price-sub">200 DH</span></div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+              <div class="doc-item" data-name="Relevé de notes de master" data-price-eur="20" data-price-mad="200"
+                data-id="releveMaster">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_releve_master">Relevé de notes de master</span>
+                  <span class="doc-sub" data-key="doc_releve_master_sub">Relevé de notes de master</span>
+                </div>
+                <div class="doc-right">
+                  <div><span class="doc-price-tag">20 €</span><span class="doc-price-sub">200 DH</span></div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+              <div class="doc-item" data-name="Diplômes instituts publics et privés" data-price-eur="20"
+                data-price-mad="200" data-id="instituts">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_instituts">Diplômes des inst. publics &amp; privés</span>
+                  <span class="doc-sub" data-key="doc_instituts_sub">Diplômes des instituts publics et privés</span>
+                </div>
+                <div class="doc-right">
+                  <div><span class="doc-price-tag">20 €</span><span class="doc-price-sub">200 DH</span></div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+              <div class="doc-item" data-name="Relevés de notes des diplômes" data-price-eur="20" data-price-mad="200"
+                data-id="relevesDiplomes" data-has-pages="true">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_releves">Relevés de notes des diplômes</span>
+                  <span class="doc-sub" data-key="doc_releves_sub">Relevés de notes des diplômes</span>
+                </div>
+                <div class="doc-right">
+                  <div><span class="doc-price-tag">20 €</span><span class="doc-price-sub">200 DH</span></div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+              <div class="doc-item" data-name="Bulletins scolaires et relevés détaillés" data-price-eur="50"
+                data-price-mad="500" data-id="bulletinDetail">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_bulletins">Bulletins scolaires &amp; relevés de notes</span>
+                  <span class="doc-sub" data-key="doc_bulletins_sub">Bulletins scolaires et relevés de notes
+                    détaillés</span>
+                </div>
+                <div class="doc-right">
+                  <div><span class="doc-price-tag">50 €</span><span class="doc-price-sub">500 DH</span></div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div id="tab2" class="tab-pane">
+            <div class="docs-grid">
+
+              <div class="doc-item" data-name="Extrait d'acte de naissance" data-price-eur="20" data-price-mad="200"
+                data-id="extraitNaissance">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_birth_extract">Extrait d'acte de naissance</span>
+                  <span class="doc-sub" data-key="doc_birth_extract_sub">Extrait d'acte de naissance</span>
+                </div>
+                <div class="doc-right">
+                  <div>
+                    <span class="doc-price-tag" data-key="price_20_eur">20 €</span>
+                    <span class="doc-price-sub" data-key="price_200_dh">200 DH</span>
+                  </div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+              <div class="doc-item" data-name="Copie intégrale acte de naissance" data-price-eur="20"
+                data-price-mad="200" data-id="copieNaissance">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_birth_full">Copie intégrale acte de naissance</span>
+                  <span class="doc-sub" data-key="doc_birth_full_sub">Copie intégrale de l'acte de naissance</span>
+                </div>
+                <div class="doc-right">
+                  <div>
+                    <span class="doc-price-tag" data-key="price_20_eur">20 €</span>
+                    <span class="doc-price-sub" data-key="price_200_dh">200 DH</span>
+                  </div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+              <div class="doc-item" data-name="Actes de mariage / divorce" data-price-eur="20" data-price-mad="200"
+                data-id="mariageDivorce">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_marriage">Actes de mariage / divorce</span>
+                  <span class="doc-sub" data-key="doc_marriage_sub">Actes de mariage et de divorce</span>
+                </div>
+                <div class="doc-right">
+                  <div>
+                    <span class="doc-price-tag" data-key="price_20_eur">20 €</span>
+                    <span class="doc-price-sub" data-key="price_200_dh">200 DH</span>
+                  </div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+              <div class="doc-item" data-name="Copie du casier judiciaire" data-price-eur="20" data-price-mad="200"
+                data-id="casierCopie">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_casier_copy">Copie du casier judiciaire</span>
+                  <span class="doc-sub" data-key="doc_casier_copy_sub">Copie du casier judiciaire</span>
+                </div>
+                <div class="doc-right">
+                  <div>
+                    <span class="doc-price-tag" data-key="price_20_eur">20 €</span>
+                    <span class="doc-price-sub" data-key="price_200_dh">200 DH</span>
+                  </div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+              <div class="doc-item" data-name="Extrait du casier judiciaire" data-price-eur="20" data-price-mad="200"
+                data-id="extraitCasier">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_casier_extract">Extrait du casier judiciaire</span>
+                  <span class="doc-sub" data-key="doc_casier_extract_sub">Extrait du casier judiciaire</span>
+                </div>
+                <div class="doc-right">
+                  <div>
+                    <span class="doc-price-tag" data-key="price_20_eur">20 €</span>
+                    <span class="doc-price-sub" data-key="price_200_dh">200 DH</span>
+                  </div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div id="tab3" class="tab-pane">
+            <div class="docs-grid">
+
+              <div class="doc-item" data-name="Permis de conduire" data-price-eur="20" data-price-mad="200"
+                data-id="permis">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_permis">Permis de conduire</span>
+                  <span class="doc-sub" data-key="doc_permis_sub">Traduction du permis de conduire</span>
+                </div>
+                <div class="doc-right">
+                  <div>
+                    <span class="doc-price-tag" data-key="price_20_eur">20 €</span>
+                    <span class="doc-price-sub" data-key="price_200_dh">200 DH</span>
+                  </div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+              <div class="doc-item" data-name="Carte de santé / Carnet de vaccination" data-price-eur="20"
+                data-price-mad="200" data-id="vaccination">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_health">Carte de santé / Carnet de vaccination</span>
+                  <span class="doc-sub" data-key="doc_health_sub">Carte de santé, carnet de vaccination</span>
+                </div>
+                <div class="doc-right">
+                  <div>
+                    <span class="doc-price-tag" data-key="price_20_eur">20 €</span>
+                    <span class="doc-price-sub" data-key="price_200_dh">200 DH</span>
+                  </div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+              <div class="doc-item" data-name="Attestations administratives" data-price-eur="20" data-price-mad="200"
+                data-id="attestAdmin">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_admin">Attestations administratives</span>
+                  <span class="doc-sub" data-key="doc_admin_sub">Attestations administratives</span>
+                </div>
+                <div class="doc-right">
+                  <div>
+                    <span class="doc-price-tag" data-key="price_20_eur">20 €</span>
+                    <span class="doc-price-sub" data-key="price_200_dh">200 DH</span>
+                  </div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+              <div class="doc-item" data-name="Attestation de stage / travail" data-price-eur="20" data-price-mad="200"
+                data-id="stageTravail">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_stage">Attestation de stage / travail</span>
+                  <span class="doc-sub" data-key="doc_stage_sub">Attestations de stage et de travail</span>
+                </div>
+                <div class="doc-right">
+                  <div>
+                    <span class="doc-price-tag" data-key="price_20_eur">20 €</span>
+                    <span class="doc-price-sub" data-key="price_200_dh">200 DH</span>
+                  </div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+              <div class="doc-item" data-name="Autres attestations" data-price-eur="20" data-price-mad="200"
+                data-id="autresAttest">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_other_attest">Autres attestations</span>
+                  <span class="doc-sub" data-key="doc_other_attest_sub">Autres attestations</span>
+                </div>
+                <div class="doc-right">
+                  <div>
+                    <span class="doc-price-tag" data-key="price_20_eur">20 €</span>
+                    <span class="doc-price-sub" data-key="price_200_dh">200 DH</span>
+                  </div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div id="tab4" class="tab-pane">
+            <div class="docs-grid">
+              <div class="doc-item" data-name="Autres documents (sur devis)" data-price-eur="0" data-price-mad="0"
+                data-id="otherDevis" data-devis="true">
+                <div class="doc-info">
+                  <span class="doc-name" data-key="doc_other">Autres documents</span>
+                  <span class="doc-sub" data-key="doc_other_sub">Tous les autres types – prix sur demande</span>
+                </div>
+                <div class="doc-right">
+                  <div>
+                    <span class="doc-price-tag" style="color:#7a8ea0;" data-key="price_on_request">Sur devis</span>
+                  </div>
+                  <button class="doc-add-btn" title="Ajouter">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Selected docs -->
+        <div class="" id="selectedDocsCard" style="display:none;">
+          <div class="selected-docs-title">Documents choisis (<span id="selectedCountStep1">0</span>)</div>
+          <div id="selectedDocsList1"></div>
+        </div>
+
+        <div class="step-actions">
+          <button class="btn-back" disabled style="opacity:0.4; cursor:default;" data-key="btn_back">
+            ← Retour
+          </button>
+
+          <button class="btn-next" id="gotoStep2Btn" data-key="btn_next">
+            Suivant <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- ─── STEP 2 ─── -->
+      <div id="step2" class="step-content" style="display:none;">
+
+        <div class="card">
+          <div class="card-title">Choisir les langues</div>
+          <div class="lang-row">
+            <div class="lang-field">
+              <label>Langue source</label>
+              <select id="sourceLang" class="lang-select">
+                <option value="FR">FR &nbsp; Français</option>
+                <option value="EN">EN &nbsp; Anglais</option>
+                <option value="AR">AR &nbsp; Arabe</option>
+                <option value="ES">ES &nbsp; Espagnol</option>
+              </select>
+            </div>
+            <div class="lang-field">
+              <label>Langue cible</label>
+              <select id="targetLang" class="lang-select">
+                <option value="DE">DE &nbsp; Allemand</option>
+                <option value="EN">EN &nbsp; Anglais</option>
+                <option value="FR">FR &nbsp; Français</option>
+                <option value="AR">AR &nbsp; Arabe</option>
+                <option value="ES">ES &nbsp; Espagnol</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Délai de traitement</div>
+          <div class="options-row" id="deadlineOptions">
+            <div class="option-card selected" data-delai="standard" data-mult="1">
+              <div class="opt-title">Standard</div>
+              <div class="opt-sub">10 jours</div>
+            </div>
+            <div class="option-card" data-delai="urgent" data-mult="1.5">
+              <div class="opt-title">Urgent</div>
+              <div class="opt-sub">3 jours</div>
+              <div class="opt-badge">+50% Supplément</div>
+            </div>
+            <div class="option-card" data-delai="express" data-mult="2">
+              <div class="opt-title">Urgent 24h</div>
+              <div class="opt-sub">24 heures</div>
+              <div class="opt-badge">+100% Supplément</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Destination d'expédition</div>
+          <div class="shipping-row" id="shippingOptions">
+            <div class="ship-card" data-ship="ma" data-price-eur="10" data-price-mad="100">
+              <div class="ship-title"><span
+                  style="font-size:0.75rem; background:#e8f0fb; padding:0.1rem 0.4rem; border-radius:4px; color:#023d79; margin-right:0.4rem;">MA</span>Maroc
+              </div>
+              <div class="ship-price">100 DH (≈ 10 €)</div>
+            </div>
+            <div class="ship-card selected" data-ship="eu" data-price-eur="20" data-price-mad="0">
+              <div class="ship-title"><span
+                  style="font-size:0.75rem; background:#e8f0fb; padding:0.1rem 0.4rem; border-radius:4px; color:#023d79; margin-right:0.4rem;">EU</span>Europe
+              </div>
+              <div class="ship-price">20 €</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <button class="btn-back" id="backToStep1_2">← Retour</button>
+          <button class="btn-next" id="gotoStep3Btn">Suivant <i class="fas fa-arrow-right"></i></button>
+        </div>
+      </div>
+
+      <!-- ─── STEP 3 ─── -->
+      <div id="step3" class="step-content" style="display:none;">
+
+        <div class="card">
+          <div class="card-title">Coordonnées</div>
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Nom</label>
+              <input type="text" id="fullName" class="form-input" placeholder="Prénom et nom">
+            </div>
+            <div class="form-field">
+              <label>E-mail</label>
+              <input type="email" id="emailAddr" class="form-input" placeholder="votre@email.fr">
+            </div>
+            <div class="form-field">
+              <label>Téléphone</label>
+              <input type="tel" id="phoneNum" class="form-input" placeholder="+33 ...">
+            </div>
+            <div class="form-field">
+              <label>Adresse de livraison</label>
+              <input type="text" id="address" class="form-input" placeholder="Rue, code postal, ville">
+            </div>
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <button class="btn-back" id="backToStep2_3">← Retour</button>
+          <button class="btn-next" id="gotoStep4Btn">Suivant <i class="fas fa-arrow-right"></i></button>
+        </div>
+      </div>
+
+      <!-- ─── STEP 4 ─── -->
+      <div id="step4" class="step-content" style="display:none;">
+
+        <div class="card">
+          <div class="card-title">Récapitulatif de commande</div>
+          <div id="step4DocList"></div>
+          <div class="recap-meta-grid" id="step4MetaGrid"></div>
+          <div class="recap-notice">
+            <i class="fas fa-info-circle"></i>
+            <span>Les traductions que nous réalisons ne nécessitent pas de certification supplémentaire. Elles sont
+              acceptées par toutes les autorités.</span>
+          </div>
+        </div>
+
+        <div class="step-actions">
+          <button class="btn-back" id="backToStep3_4">← Retour</button>
+          <button class="btn-order" id="finalSubmitBtn"><i class="fas fa-check"></i> Commander (avec frais)</button>
+        </div>
+      </div>
+
+    </div><!-- end main-col -->
+
+    <!-- ═══════════════ SIDEBAR ═══════════════ -->
+    <div class="side-col">
+      <div class="sidebar-card">
+        <div class="sidebar-title" data-key="price_summary">Récapitulatif des prix</div>
+
+        <!-- <div class="price-total">
+           <span>Montant total</span>
+           <span class="amount" id="sidebarTotal">0 €</span>
+        </div>
+        
+        <div class="price-shipping" >Envoi par courrier recommandé</div> -->
+
+        <div id="totalSection" style="display:none;">
+          <div id="sidebarPriceLines" data-key="no_docs"></div>
+          <div class="price-total">
+            <span data-key="total_amount">Montant total</span>
+            <span class="amount" id="sidebarTotal">0 €</span>
+          </div>
+
+          <div class="price-shipping" data-key="shipping_note">
+            Envoi par courrier recommandé
+          </div>
+        </div>
+        <div class="trust-list">
+          <div class="trust-item"><i class="fas fa-check"></i> <span data-key="ssl">Chiffrement SSL</span></div>
+          <div class="trust-item"><i class="fas fa-check"></i> <span data-key="rgpd">Conforme RGPD</span></div>
+          <div class="trust-item"><i class="fas fa-check"></i> <span data-key="sworn">Traducteurs assermentés</span>
+          </div>
+          <div class="trust-item"><i class="fas fa-check"></i> <span data-key="accepted">Acceptées par toutes les
+              autorités</span></div>
+        </div>
+
+        <div class="payment-section">
+          <div class="payment-label" data-key="payment_methods">Modes de paiement</div>
+        </div>
+        <div class="payment-icons-grid">
+
+          <div class="pay-icon">
+            <svg width="48" height="28" viewBox="0 0 40 28" fill="none" xmlns="http://www.w3.org/2000/svg"
+              style="color: #00BD61;">
+              <!-- Main border -->
+              <rect x="1" y="1" width="38" height="26" rx="3" stroke="currentColor" stroke-width="1.5" fill="none">
+              </rect>
+
+              <!-- Center circle and Euro symbol -->
+              <circle cx="20" cy="14" r="6" stroke="currentColor" stroke-width="1.5"></circle>
+              <text x="20" y="17.5" text-anchor="middle" font-size="10" font-weight="700" fill="currentColor">€</text>
+
+              <!-- Decorative corner rectangles -->
+              <rect x="4" y="5" width="4" height="4" rx="1" fill="currentColor" opacity="0.3"></rect>
+              <rect x="32" y="19" width="4" height="4" rx="1" fill="currentColor" opacity="0.3"></rect>
+            </svg>
+            Espèces
+          </div>
+          <div class="pay-icon">
+            <!-- We set the width/height to 48x28 to maintain the aspect ratio of your viewBox -->
+            <svg width="48" height="28" viewBox="0 0 40 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Roof -->
+              <path d="M20 3L4 11h32L20 3z" stroke="currentColor" stroke-width="1.5" fill="none"></path>
+
+              <!-- Base -->
+              <rect x="4" y="23" width="32" height="2.5" rx="1" fill="currentColor" opacity="0.5"></rect>
+
+              <!-- Pillars -->
+              <rect x="8" y="12" width="3" height="10" rx="0.5" fill="currentColor" opacity="0.6"></rect>
+              <rect x="15" y="12" width="3" height="10" rx="0.5" fill="currentColor" opacity="0.6"></rect>
+              <rect x="22" y="12" width="3" height="10" rx="0.5" fill="currentColor" opacity="0.6"></rect>
+              <rect x="29" y="12" width="3" height="10" rx="0.5" fill="currentColor" opacity="0.6"></rect>
+            </svg>Virement
+          </div>
+          <div class="pay-icon"><svg width="48" height="28" viewBox="0 0 40 28" fill="none"
+              xmlns="http://www.w3.org/2000/svg">
+              <!-- Outer Frame -->
+              <rect x="1" y="1" width="38" height="26" rx="3" stroke="currentColor" stroke-width="1.2" opacity="0.3"
+                fill="none"></rect>
+
+              <!-- "Pay" text in Dark Blue -->
+              <text x="20" y="12" text-anchor="middle" font-size="7" font-weight="700" fill="#003087"
+                font-family="sans-serif">Pay</text>
+
+              <!-- "Pal" text in Light Blue -->
+              <text x="20" y="21" text-anchor="middle" font-size="7" font-weight="700" fill="#0070e0"
+                font-family="sans-serif">Pal</text>
+            </svg>PayPal</div>
+          <div class="pay-icon"><svg width="48" height="28" viewBox="0 0 40 28" fill="none"
+              xmlns="http://www.w3.org/2000/svg">
+              <!-- Outer Border -->
+              <rect x="1" y="1" width="38" height="26" rx="3" stroke="currentColor" stroke-width="1.2" opacity="0.3"
+                fill="none"></rect>
+
+              <!-- Visa Top Blue Bar -->
+              <rect x="1" y="1" width="38" height="4" rx="3" fill="#1a1f71"></rect>
+
+              <!-- Visa Bottom Gold Bar -->
+              <rect x="1" y="23" width="38" height="4" rx="3" fill="#f7a600"></rect>
+
+              <!-- Visa Text -->
+              <text x="20" y="18" text-anchor="middle" font-size="11" font-weight="700" font-style="italic"
+                fill="#1a1f71" font-family="sans-serif">VISA</text>
+            </svg>Visa</div>
+          <div class="pay-icon"><svg width="48" height="28" viewBox="0 0 40 28" fill="none"
+              xmlns="http://www.w3.org/2000/svg">
+              <!-- Document Border -->
+              <path d="M10 2h20a2 2 0 012 2v20a2 2 0 01-2 2H10a2 2 0 01-2-2V4a2 2 0 012-2z" stroke="currentColor"
+                stroke-width="1.5" fill="none"></path>
+
+              <!-- Text Lines -->
+              <line x1="13" y1="8" x2="27" y2="8" stroke="currentColor" stroke-width="1.5" opacity="0.5"></line>
+              <line x1="13" y1="12" x2="27" y2="12" stroke="currentColor" stroke-width="1.5" opacity="0.5"></line>
+              <line x1="13" y1="16" x2="22" y2="16" stroke="currentColor" stroke-width="1.5" opacity="0.5"></line>
+
+              <!-- Euro Symbol -->
+              <text x="25" y="23" text-anchor="middle" font-size="7" font-weight="700" fill="currentColor">€</text>
+            </svg>Facture</div>
+          <div class="pay-icon"><svg width="48" height="28" viewBox="0 0 40 28" fill="none"
+              xmlns="http://www.w3.org/2000/svg">
+              <!-- Outer Border -->
+              <rect x="1" y="1" width="38" height="26" rx="3" stroke="currentColor" stroke-width="1.2" opacity="0.3"
+                fill="none"></rect>
+
+              <!-- Left Circle -->
+              <circle cx="16" cy="14" r="7" fill="#e4002b" opacity="0.15"></circle>
+
+              <!-- Right Circle -->
+              <circle cx="24" cy="14" r="7" fill="#e4002b" opacity="0.25"></circle>
+
+              <!-- "PAY" Text -->
+              <text x="20" y="17" text-anchor="middle" font-size="5.5" font-weight="700" fill="#e4002b"
+                font-family="sans-serif">PAY</text>
+            </svg>Payzone</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- end page-body -->
+
+  <script>
+    // ─── STATE ───────────────────────────────────────────────────────
+    let selectedDocs = [];
+    let currentStep = 1;
+    let selectedDeadline = { type: "standard", multiplier: 1 };
+    let selectedShipping = { destination: "", extraEur: 0, extraMad: 0 };
+    let sourceLang = "FR";
+    let targetLang = "DE";
+
+
+    window.onmessage = (event) => {
+      // if (event.data) {
+      //     console.log("Language received from Wix:", event.data);
+
+      // }
+      const data = event.data;
+
+      if (!data) return;
+
+      console.log("Language received from Wix:", data);
+
+      if (data.type === "LANG_CHANGE") {
+        updateLanguage(data.lang);
+      }
+    };
+    function updateLanguage(lang) {
+
+      console.log("Switching language to:", lang);
+
+      if (lang === "fr") {
+        // French mode
+        document.documentElement.setAttribute("lang", "fr");
+        const content = translations["fr"];
+        document.querySelectorAll('[data-key]').forEach(element => {
+          const key = element.getAttribute('data-key');
+          if (content && content[key]) {
+            element.innerText = content[key];
+          }
+        });
+
+        console.log("FR language activated");
+      }
+
+      else if (lang === "de") {
+        // German mode
+        document.documentElement.setAttribute("lang", "de");
+        const content = translations["de"];
+        document.querySelectorAll('[data-key]').forEach(element => {
+          const key = element.getAttribute('data-key');
+          if (content && content[key]) {
+            element.innerText = content[key];
+          }
+        })
+        console.log("DE language activated");
+      }
+
+      else {
+        console.log("Default language (fallback)");
+      }
+    }
+
+    // ─── UTILS ───────────────────────────────────────────────────────
+    function getCustomerInfo() {
+      return {
+        name: document.getElementById('fullName')?.value.trim() || "—",
+        email: document.getElementById('emailAddr')?.value.trim() || "—",
+        phone: document.getElementById('phoneNum')?.value.trim() || "—",
+        address: document.getElementById('address')?.value.trim() || "—"
+      };
+    }
+
+    function calcTotals() {
+      let docsTotalEur = selectedDocs.reduce((s, d) => {
+        const pages = d.pages !== null ? d.pages : 1;
+        const unitPrice = d.pages !== null ? 20 : d.priceEur;
+        return s + (unitPrice * pages);
+      }, 0);
+      let mult = selectedDeadline.multiplier;
+      let docsAfterUrgent = docsTotalEur * mult;
+      let shippingEur = selectedShipping.extraEur;
+      let total = docsAfterUrgent + shippingEur;
+      let urgentSurcharge = docsTotalEur * (mult - 1);
+      return { docsTotalEur, docsAfterUrgent, shippingEur, total, urgentSurcharge };
+    }
+
+    // ─── SIDEBAR UPDATE ───────────────────────────────────────────────
+    function updateSidebar() {
+      console.log("Current Step:", currentStep);
+      const { total, urgentSurcharge, shippingEur } = calcTotals();
+      const mult = selectedDeadline.multiplier;
+      let html = '';
+
+      selectedDocs.forEach(doc => {
+        let price = ((doc.pages || 1) * 20) * mult;
+        html += `<div class="price-line"><span class="pl-name">${doc.name}</span><span>${price.toFixed(2)} €</span></div>`;
+      });
+
+      if (currentStep > 1 && shippingEur > 0) {
+        html += `<div class="price-line"><span class="pl-name">Frais d'expédition (${selectedShipping.destination})</span><span>${shippingEur} €</span></div>`;
+      }
+      if (mult > 1 && urgentSurcharge > 0) {
+        html += `<div class="price-line"><span class="pl-name">Supplément urgent</span><span>+${urgentSurcharge.toFixed(2)} €</span></div>`;
+      }
+
+      if (html === '') html = '<div class="price-line" style="color:#9aaabf;">Aucun document sélectionné</div>';
+      const totalSection = document.getElementById('totalSection');
+
+      if (selectedDocs.length === 0) {
+        totalSection.style.display = 'none';
+      } else {
+        totalSection.style.display = 'block';
+      }
+      document.getElementById('sidebarPriceLines').innerHTML = html;
+      document.getElementById('sidebarTotal').textContent = total.toFixed(2) + ' €';
+    }
+
+    // ─── STEP 1: SELECTED DOCS LIST ──────────────────────────────────
+    function updateStep1SelectedList() {
+      const card = document.getElementById('selectedDocsCard');
+      const list = document.getElementById('selectedDocsList1');
+      const count = document.getElementById('selectedCountStep1');
+
+      if (selectedDocs.length === 0) {
+        card.style.display = 'none';
+        return;
+      }
+      card.style.display = 'block';
+      count.textContent = selectedDocs.length;
+
+      let html = '';
+      selectedDocs.forEach((doc, idx) => {
+        const isPageBased = doc.pages !== null;
+        const pages = isPageBased ? doc.pages : 1;
+        const unitPrice = isPageBased ? 20 : doc.priceEur;
+        const price = (unitPrice * pages) * selectedDeadline.multiplier;
+
+        if (isPageBased) {
+          // Show stepper row
+          html += `
+      <div class="selected-doc-row">
+        <div class="selected-doc-left">
+          <i class="fas fa-file-alt doc-icon"></i>
+          <span class="selected-doc-name">${doc.name}</span>
+        </div>
+        <div class="selected-doc-right">
+          <div class="page-stepper">
+            <button class="stepper-btn" data-action="minus" data-idx="${idx}">−</button>
+            <input class="stepper-input" type="number" min="1" value="${pages}" data-idx="${idx}" data-stepper />
+            <button class="stepper-btn" data-action="plus" data-idx="${idx}">+</button>
+          </div>
+          <span class="stepper-pages-label">pages</span>
+          <span class="stepper-price" id="stepper-price-${idx}">${price.toFixed(0)} €</span>
+          <button class="remove-doc-btn" data-idx="${idx}" title="Supprimer"><i class="fas fa-times"></i></button>
+        </div>
+      </div>`;
+        } else {
+          // Normal row (no stepper)
+          html += `
+      <div class="selected-doc-row">
+        <div class="selected-doc-left">
+          <i class="fas fa-file-alt doc-icon"></i>
+          <span class="selected-doc-name">${doc.name}</span>
+        </div>
+        <div class="selected-doc-right">
+          <span class="selected-doc-price">${price.toFixed(2)} €</span>
+          <button class="remove-doc-btn" data-idx="${idx}" title="Supprimer"><i class="fas fa-times"></i></button>
+        </div>
+      </div>`;
+        }
+      });
+
+      list.innerHTML = html;
+
+      // Bind stepper buttons
+      list.querySelectorAll('.stepper-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.getAttribute('data-idx'));
+          const action = btn.getAttribute('data-action');
+          const doc = selectedDocs[idx];
+          if (doc.pages === null) return;
+
+          if (action === 'plus') doc.pages = (doc.pages || 1) + 1;
+          if (action === 'minus') doc.pages = Math.max(1, (doc.pages || 1) - 1);
+
+          updateStep1SelectedList();
+          updateSidebar();
+        });
+      });
+
+      // Bind stepper text inputs
+      list.querySelectorAll('[data-stepper]').forEach(input => {
+        input.addEventListener('change', () => {
+          const idx = parseInt(input.getAttribute('data-idx'));
+          const val = parseInt(input.value);
+          if (!isNaN(val) && val >= 1) {
+            selectedDocs[idx].pages = val;
+            updateStep1SelectedList();
+            updateSidebar();
+          }
+        });
+      });
+
+      // Bind remove buttons
+      list.querySelectorAll('.remove-doc-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectedDocs.splice(parseInt(btn.getAttribute('data-idx')), 1);
+          updateStep1SelectedList();
+          updateSidebar();
+        });
+      });
+    }
+    // ─── ADD DOCUMENT ─────────────────────────────────────────────────
+    function addDocument(name, priceEur, priceMad, id, hasPages) {
+      const pageBasedDocs = ["releveLicence", "releveMaster", "relevesDiplomes"];
+      const pages = pageBasedDocs.includes(id) ? 1 : null; // null = not page-based
+
+      selectedDocs.push({
+        id,
+        name,
+        priceEur: pageBasedDocs.includes(id) ? 20 : priceEur, // base per-page price
+        priceMad: pageBasedDocs.includes(id) ? 200 : priceMad,
+        pages: pages,         // null if not page-based
+        pagesExtra: 0
+      });
+
+      updateStep1SelectedList();
+      updateSidebar();
+    }
+
+    // ─── BIND DOC ITEMS ──────────────────────────────────────────────
+    function bindDocItems() {
+      document.querySelectorAll('.doc-item').forEach(el => {
+        el.addEventListener('click', function (e) {
+          if (e.target.closest('.doc-add-btn') || e.target === this || e.target.closest('.doc-item')) {
+            const name = el.getAttribute('data-name');
+            const priceEur = parseInt(el.getAttribute('data-price-eur'));
+            const priceMad = parseInt(el.getAttribute('data-price-mad'));
+            const id = el.getAttribute('data-id');
+            const hasPages = el.hasAttribute('data-has-pages');
+            if (el.getAttribute('data-devis') === 'true') {
+              alert("Pour les autres documents, merci de nous contacter pour un devis personnalisé.");
+              return;
+            }
+            if (name && !isNaN(priceEur)) addDocument(name, priceEur, priceMad, id, hasPages);
+          }
+        });
+      });
+    }
+
+    // ─── STEP PROGRESS ───────────────────────────────────────────────
+    function updateStepProgress(step) {
+      for (let i = 1; i <= 4; i++) {
+        const node = document.getElementById('sn' + i);
+        const circle = document.getElementById('sc' + i);
+        node.classList.remove('active', 'done');
+        circle.innerHTML = i < step ? '<i class="fas fa-check" style="font-size:0.8rem;"></i>' : i;
+        if (i === step) node.classList.add('active');
+        else if (i < step) node.classList.add('done');
+
+        if (i < 4) {
+          const conn = document.getElementById('conn' + i);
+          conn.className = 'step-connector' + (i < step ? ' done' : '');
+        }
+      }
+    }
+
+    // ─── STEP 4 RECAP ────────────────────────────────────────────────
+    function updateStep4Recap() {
+      const mult = selectedDeadline.multiplier;
+      const { shippingEur } = calcTotals();
+      const customer = getCustomerInfo();
+
+      let docHtml = '';
+      selectedDocs.forEach(doc => {
+        let price = ((doc.pages || 1) * 20) * mult;
+        docHtml += `
+        <div class="recap-doc-row">
+          <div>
+            <div class="recap-doc-name">${doc.name}</div>
+            <div class="recap-doc-sub">${doc.priceEur} €</div>
+          </div>
+          <div class="recap-doc-price">${price.toFixed(2)} €</div>
+        </div>`;
+      });
+      document.getElementById('step4DocList').innerHTML = docHtml;
+
+      let deadlineText = selectedDeadline.type === 'standard' ? 'Standard (10 jours)' :
+        selectedDeadline.type === 'urgent' ? 'Urgent (3 jours)' : 'Urgent 24h';
+
+      document.getElementById('step4MetaGrid').innerHTML = `
+      <div class="recap-meta-item">Langues: <strong><span style="font-size:0.75rem;background:#e8f0fb;padding:0.1rem 0.3rem;border-radius:3px;color:#023d79;">FR</span> Français → <span style="font-size:0.75rem;background:#e8f0fb;padding:0.1rem 0.3rem;border-radius:3px;color:#023d79;">DE</span> Allemand</strong></div>
+      <div class="recap-meta-item">Délai: <strong>${deadlineText}</strong></div>
+      <div class="recap-meta-item">Destination d'expédition: <strong>${selectedShipping.destination}</strong></div>
+      <div class="recap-meta-item">Nom: <strong>${customer.name}</strong></div>
+      <div class="recap-meta-item">E-mail: <strong>${customer.email}</strong></div>
+    `;
+    }
+
+    // ─── SHOW STEP ───────────────────────────────────────────────────
+    function showStep(step) {
+      document.querySelectorAll('.step-content').forEach(el => el.style.display = 'none');
+      document.getElementById('step' + step).style.display = 'block';
+      currentStep = step;
+      updateStepProgress(step);
+      if (step === 2) {
+
+        bindStep2Options();
+        updateSidebar();
+      }
+      if (step === 4) updateStep4Recap();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ─── STEP 2 OPTIONS ──────────────────────────────────────────────
+    function bindStep2Options() {
+      document.querySelectorAll('#deadlineOptions .option-card').forEach(card => {
+        card.onclick = () => {
+          document.querySelectorAll('#deadlineOptions .option-card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          selectedDeadline = { type: card.getAttribute('data-delai'), multiplier: parseFloat(card.getAttribute('data-mult')) };
+          updateSidebar();
+          updateStep1SelectedList();
+        };
+      });
+
+      document.querySelectorAll('#shippingOptions .ship-card').forEach(card => {
+        card.onclick = () => {
+          document.querySelectorAll('#shippingOptions .ship-card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          let priceEur = parseInt(card.getAttribute('data-price-eur'));
+          let dest = card.getAttribute('data-ship') === 'ma' ? 'MA Maroc' : 'EU Europe';
+          selectedShipping = { destination: dest, extraEur: priceEur, extraMad: 0 };
+          updateSidebar();
+        };
+      });
+
+      const sourceSelect = document.getElementById('sourceLang');
+      const targetSelect = document.getElementById('targetLang');
+      sourceSelect.onchange = () => { sourceLang = sourceSelect.value; };
+      targetSelect.onchange = () => { targetLang = targetSelect.value; };
+    }
+
+    // ─── TABS ─────────────────────────────────────────────────────────
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tabId = btn.getAttribute('data-tab');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active-pane'));
+        document.getElementById(tabId).classList.add('active-pane');
+      });
+    });
+
+    // ─── FILE INPUTS ──────────────────────────────────────────────────
+    document.getElementById('fileInput').addEventListener('change', function () {
+      if (this.files.length) {
+        let span = document.getElementById('fileNameDisplay');
+        span.textContent = '✓ ' + this.files[0].name;
+        span.style.display = 'inline-block';
+      }
+    });
+    document.getElementById('fileInputCamera').addEventListener('change', function () {
+      if (this.files.length) {
+        let span = document.getElementById('fileNameDisplay');
+        span.textContent = '✓ ' + this.files[0].name;
+        span.style.display = 'inline-block';
+      }
+    });
+
+    // ─── NAV BUTTONS ──────────────────────────────────────────────────
+    document.getElementById('gotoStep2Btn').addEventListener('click', () => {
+      if (selectedDocs.length) showStep(2);
+      else alert("Veuillez sélectionner au moins un document.");
+    });
+    document.getElementById('backToStep1_2').addEventListener('click', () => showStep(1));
+    document.getElementById('gotoStep3Btn').addEventListener('click', () => showStep(3));
+    document.getElementById('backToStep2_3').addEventListener('click', () => showStep(2));
+    document.getElementById('gotoStep4Btn').addEventListener('click', () => {
+      const name = document.getElementById('fullName')?.value.trim();
+      const email = document.getElementById('emailAddr')?.value.trim();
+      if (!name || !email) { alert("Veuillez remplir votre nom et votre email avant de continuer."); return; }
+      showStep(4);
+    });
+    document.getElementById('backToStep3_4').addEventListener('click', () => showStep(3));
+    document.getElementById('finalSubmitBtn').addEventListener('click', async () => {
+      const customer = getCustomerInfo();
+      const { total, shippingEur, urgentSurcharge } = calcTotals();
+
+
+
+
+      // Convert file to base64 if uploaded
+      // let fileData = null;
+      // if (uploadedFile) {
+      //   fileData = await new Promise((resolve) => {
+      //     const reader = new FileReader();
+      //     reader.onload = () => resolve({
+      //       name: uploadedFile.name,
+      //       type: uploadedFile.type,
+      //       size: uploadedFile.size,
+      //       base64: reader.result
+      //     });
+      //     reader.readAsDataURL(uploadedFile);
+      //   });
+      // }
+
+      const fileInput = document.getElementById("fileInput");
+      const uploadedFile = fileInput.files[0] || null;
+
+      let fileData = null;
+
+      if (uploadedFile) {
+        fileData = await new Promise((resolve) => {
+          const reader = new FileReader();
+
+          reader.onload = () => resolve({
+            name: uploadedFile.name,
+            type: uploadedFile.type,
+            size: uploadedFile.size,
+            base64: reader.result
+          });
+
+          reader.readAsDataURL(uploadedFile);
+        });
+      }
+
+      console.log(fileData);
+
+      const orderData = {
+        fullName: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        sourceLanguage: sourceLang,
+        targetLanguage: targetLang,
+        documentType: selectedDocs.map(d => d.name).join(", "),
+        isCertified: true,
+        urgency: selectedDeadline.type,
+        message: customer.address,
+        uploadedFile: fileData,
+        status: "new",
+        createdAt: new Date().toISOString(),
+        selectedItems: selectedDocs.map(d => ({
+          name: d.name,
+          pages: d.pages !== null ? d.pages : 1,
+          unitPrice: d.pages !== null ? 20 : d.priceEur,
+          lineTotal: ((d.pages !== null ? d.pages : 1) * (d.pages !== null ? 20 : d.priceEur)) * selectedDeadline.multiplier
+        })),
+
+        // ─── PRICING ───────────────────────────────
+        totalPrice: total,                           // full total including shipping + urgency
+        shippingCost: shippingEur,                   // shipping cost alone
+        urgentSurcharge: urgentSurcharge,            // extra charge for urgent/express (0 if standard)
+        shippingDestination: selectedShipping.destination  // "MA Maroc" or "EU Europe"
+      };
+
+      console.log("Total price is: ", orderData.totalPrice);
+
+      console.log("ORDER DATA:", orderData);
+      window.parent.postMessage({ type: "ORDER_SUBMIT", payload: orderData }, "*");
+
+      /* alert("✅ Commande validée ! Un email récapitulatif vous sera envoyé."); */
+
+    });
+
+    // ─── INIT ─────────────────────────────────────────────────────────
+    bindDocItems();
+    updateSidebar();
+    showStep(1);
+
+
+
+
+    // language change here ----
+
+    const translations = {
+      fr: {
+        step_docs: "Documents",
+        step_lang: "Langues",
+        step_contact: "Contact",
+        step_summary: "Récapitulatif",
+        upload_scan_title: "Scanner maintenant",
+        upload_scan_desc: "Ouvrir la caméra et photographier le document",
+
+        upload_file_title: "Télécharger un fichier",
+        upload_file_desc: "PDF, JPG ou PNG depuis votre appareil",
+
+        upload_hint: "ou glissez un fichier ici · PDF, JPG, PNG ou TIFF · Max. 10 Mo",
+        doc_certificates: "Certificats scolaires / Bulletins",
+        doc_certificates_sub: "Certificats scolaires et bulletins",
+
+        doc_bac: "Baccalauréat",
+        doc_bac_sub: "Certificats du baccalauréat",
+
+        doc_releve_bac: "Relevé de notes du baccalauréat",
+        doc_releve_bac_sub: "Relevé de notes du baccalauréat",
+
+        doc_licence: "Diplôme de licence",
+        doc_licence_sub: "Diplômes de licence",
+
+        doc_releve_licence: "Relevé de notes de licence",
+        doc_releve_licence_sub: "Relevé de notes de licence",
+
+        doc_master: "Diplôme de master",
+        doc_master_sub: "Diplômes de master",
+
+        doc_releve_master: "Relevé de notes de master",
+        doc_releve_master_sub: "Relevé de notes de master",
+
+        doc_instituts: "Diplômes des inst. publics & privés",
+        doc_instituts_sub: "Diplômes des instituts publics et privés",
+
+        doc_releves: "Relevés de notes des diplômes",
+        doc_releves_sub: "Relevés de notes des diplômes",
+
+        doc_bulletins: "Bulletins scolaires & relevés de notes",
+        doc_bulletins_sub: "Bulletins scolaires et relevés de notes détaillés",
+        choose_doc_title: "Choisir le type de document",
+        tab_cert: "Certificats & diplômes",
+        tab_civil: "Actes & état civil",
+        tab_personal: "Documents personnels",
+        tab_other: "Autres documents",
+        price_summary: "Récapitulatif des prix",
+        no_docs: "Encore aucun document sélectionné",
+        total_amount: "Montant total",
+        shipping_note: "Envoi par courrier recommandé",
+
+        ssl: "Chiffrement SSL",
+        rgpd: "Conforme RGPD",
+        sworn: "Traducteurs assermentés",
+        accepted: "Acceptées par toutes les autorités",
+
+        payment_methods: "Modes de paiement",
+        doc_birth_extract: "Extrait d'acte de naissance",
+        doc_birth_extract_sub: "Extrait d'acte de naissance",
+
+        doc_birth_full: "Copie intégrale acte de naissance",
+        doc_birth_full_sub: "Copie intégrale de l'acte de naissance",
+
+        doc_marriage: "Actes de mariage / divorce",
+        doc_marriage_sub: "Actes de mariage et de divorce",
+
+        doc_casier_copy: "Copie du casier judiciaire",
+        doc_casier_copy_sub: "Copie du casier judiciaire",
+
+        doc_casier_extract: "Extrait du casier judiciaire",
+        doc_casier_extract_sub: "Extrait du casier judiciaire",
+        doc_permis: "Permis de conduire",
+        doc_permis_sub: "Traduction du permis de conduire",
+
+        doc_health: "Carte de santé / Carnet de vaccination",
+        doc_health_sub: "Carte de santé, carnet de vaccination",
+
+        doc_admin: "Attestations administratives",
+        doc_admin_sub: "Attestations administratives",
+
+        doc_stage: "Attestation de stage / travail",
+        doc_stage_sub: "Attestations de stage et de travail",
+
+        doc_other_attest: "Autres attestations",
+        doc_other_attest_sub: "Autres attestations",
+        doc_other: "Autres documents",
+        doc_other_sub: "Tous les autres types – prix sur demande",
+        price_on_request: "Sur devis",
+        bbtn_back: "← Retour",
+        btn_next: "Suivant"
+
+      },
+
+      de: {
+        step_docs: "Dokumente",
+        step_lang: "Sprachen",
+        step_contact: "Kontakt",
+        step_summary: "Übersicht",
+        upload_scan_title: "Jetzt scannen",
+        upload_scan_desc: "Kamera öffnen und Dokument fotografieren",
+
+        upload_file_title: "Datei hochladen",
+        upload_file_desc: "PDF, JPG oder PNG von Ihrem Gerät",
+
+        upload_hint: "oder Datei hier ablegen · PDF, JPG, PNG oder TIFF · Max. 10 MB",
+        doc_certificates: "Schulbescheinigungen / Zeugnisse",
+        doc_certificates_sub: "Schulbescheinigungen und Zeugnisse",
+
+        doc_bac: "Abiturzeugnis (Baccalauréat)",
+        doc_bac_sub: "Abitur- und Baccalauréat-Zeugnisse",
+
+        doc_releve_bac: "Notenübersicht des Abiturs",
+        doc_releve_bac_sub: "Notenübersicht zum Abitur",
+
+        doc_licence: "Bachelorzeugnis (Licence)",
+        doc_licence_sub: "Bachelor- und Licence-Zeugnisse",
+
+        doc_releve_licence: "Notenübersicht Bachelor",
+        doc_releve_licence_sub: "Notenübersicht Bachelor/Licence",
+
+        doc_master: "Masterzeugnis",
+        doc_master_sub: "Masterzeugnisse",
+
+        doc_releve_master: "Notenübersicht Master",
+        doc_releve_master_sub: "Notenübersicht Masterabschluss",
+
+        doc_instituts: "Diplome staatl. & privater Institute",
+        doc_instituts_sub: "Diplome aller staatlichen und privaten Institute",
+
+        doc_releves: "Notenübersichten von Diplomen",
+        doc_releves_sub: "Notenübersichten von Diplomen",
+
+        doc_bulletins: "Schulzeugnisse & Notenübersichten",
+        doc_bulletins_sub: "Ausführliche Schulzeugnisse und Notenübersichten",
+        choose_doc_title: "Dokumenttyp wählen",
+        tab_cert: "Zeugnisse & Diplome",
+        tab_civil: "Urkunden & Personenstand",
+        tab_personal: "Persönliche Dokumente",
+        tab_other: "Weitere Dokumente",
+        price_summary: "Preisübersicht",
+        no_docs: "Noch keine Dokumente gewählt.",
+
+        total_amount: "Gesamtbetrag",
+        shipping_note: "Versand per Einschreiben",
+
+        ssl: "SSL-verschlüsselt",
+        rgpd: "DSGVO-konform",
+        sworn: "Vereidigte Übersetzer",
+        accepted: "Von allen Behörden akzeptiert",
+
+        payment_methods: "Zahlungsmethoden",
+        doc_birth_extract: "Kurzfassung Geburtsurkunde",
+        doc_birth_extract_sub: "Kurzfassung der Geburtsurkunde",
+
+        doc_birth_full: "Vollständige Geburtsurkunde",
+        doc_birth_full_sub: "Vollständige Geburtsurkunde",
+
+        doc_marriage: "Heirats- / Scheidungsurkunden",
+        doc_marriage_sub: "Heirats- und Scheidungsurkunden",
+
+        doc_casier_copy: "Kopie des Führungszeugnisses",
+        doc_casier_copy_sub: "Kopie des Führungszeugnisses",
+
+        doc_casier_extract: "Auszug aus dem Strafregister",
+        doc_casier_extract_sub: "Auszug aus dem Strafregister",
+        doc_permis: "Führerschein",
+        doc_permis_sub: "Führerschein-Übersetzung",
+
+        doc_health: "Gesundheitskarte / Impfpass",
+        doc_health_sub: "Gesundheitskarte, Impfpass, Impfbescheinigung",
+
+        doc_admin: "Verwaltungsbescheinigungen",
+        doc_admin_sub: "Verwaltungsbescheinigungen",
+
+        doc_stage: "Praktikums- / Arbeitsbescheinigung",
+        doc_stage_sub: "Praktikums- und Arbeitsbescheinigungen",
+
+        doc_other_attest: "Sonstige Bescheinigungen",
+        doc_other_attest_sub: "Sonstige Bescheinigungen",
+        doc_other: "Weitere Dokumente",
+        doc_other_sub: "Alle weiteren Dokumentarten – Preis auf Anfrage",
+        price_on_request: "Auf Anfrage",
+        btn_back: "← Zurück",
+        btn_next: "Weiter"
+
+      }
+    };
+  </script>
+</body>
+
+</html><!--HTTPS only...-->

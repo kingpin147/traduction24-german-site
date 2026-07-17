@@ -1,0 +1,145 @@
+
+// =============================================================================
+// FILE: backend/checkout.jsw
+// Place this file at: <your-wix-project>/backend/checkout.jsw
+//
+// This is a Wix Backend (JSW) file — it runs server-side.
+// It handles two things:
+//   1. Saving the order to your "Orders" CMS collection
+//   2. Creating a wix-pay payment request and returning the paymentId
+// =============================================================================
+
+import wixData from 'wix-data';
+import wixPayBackend from 'wix-pay-backend';
+
+// ─── CMS Collection name — must match exactly ─────────────────────────────────
+const COLLECTION = 'Orders';
+
+// =============================================================================
+// saveOrderAndCreatePayment
+// Called from the page code after receiving the widget's postMessage.
+// Returns { paymentId, orderId } on success.
+// =============================================================================
+export async function saveOrderAndCreatePayment(orderData) {
+  const {
+    documents, uploadedFile,
+    sourceLang, targetLang,
+    processingTime, destination,
+    contact, pricing,
+  } = orderData;
+
+  // ── 1. Generate a readable order ID ──────────────────────────────────────
+  const orderId = 'T24-' + Date.now().toString(36).toUpperCase();
+
+  // ── 2. Insert into "Orders" CMS collection ───────────────────────────────
+  const orderRecord = {
+    orderId,
+    clientName:      contact.name,
+    email:           contact.email,
+    telephone:       contact.telephone,
+    deliveryAddress: contact.deliveryAddress,
+    documents:       JSON.stringify(documents),   // stored as JSON string
+    sourceLang,
+    targetLang,
+    processingTime,
+    destination,
+    totalAmount:     pricing.total,
+    currency:        'USD',
+    uploadedFileName: uploadedFile ? uploadedFile.name : '',
+    status:          'pending',
+    createdAt:       new Date(),
+  };
+
+  let insertedItem;
+  try {
+    // suppressAuth: true — allows backend to write regardless of collection permissions
+    insertedItem = await wixData.insert(COLLECTION, orderRecord, { suppressAuth: true });
+  } catch (err) {
+    console.error('CMS insert failed:', err);
+    throw new Error('Failed to save order to database: ' + err.message);
+  }
+
+  const cmsItemId = insertedItem._id; // Wix auto-generated _id for the CMS row
+
+  // ── 3. Build wix-pay line items from the cart ─────────────────────────────
+  const lineItems = documents.map(doc => ({
+    name:     doc.name,
+    price:    doc.eur,      // price in USD (your widget uses € but billing in USD per your choice)
+    quantity: doc.qty,
+  }));
+
+  // Add urgent supplement line item if applicable
+  if (pricing.urgentSupplement > 0) {
+    lineItems.push({
+      name:     'Urgent Processing Supplement',
+      price:    pricing.urgentSupplement,
+      quantity: 1,
+    });
+  }
+
+  // Add shipping/expedition fee if applicable
+  if (pricing.shippingFee > 0) {
+    lineItems.push({
+      name:     'Frais d\'expédition (EU)',
+      price:    pricing.shippingFee,
+      quantity: 1,
+    });
+  }
+
+  // ── 4. Create wix-pay payment ─────────────────────────────────────────────
+  let payment;
+  try {
+    payment = await wixPayBackend.createPayment({
+      amount:   pricing.total,
+      currency: 'USD',
+      items:    lineItems,
+      userInfo: {
+        firstName: contact.name.split(' ')[0]          || '',
+        lastName:  contact.name.split(' ').slice(1).join(' ') || '',
+        email:     contact.email,
+        phone:     contact.telephone,
+        address: {
+          addressLine: contact.deliveryAddress,
+        },
+      },
+    });
+  } catch (err) {
+    console.error('wix-pay createPayment failed:', err);
+    // If payment creation fails, mark the CMS record as failed
+    await wixData.update(COLLECTION, { _id: cmsItemId, status: 'payment_error' }, { suppressAuth: true });
+    throw new Error('Failed to create payment: ' + err.message);
+  }
+
+  console.log(`✅ Order saved [${orderId}] | CMS _id: ${cmsItemId} | paymentId: ${payment.id}`);
+
+  return {
+    paymentId: payment.id,
+    orderId,
+    cmsItemId,
+  };
+}
+
+// =============================================================================
+// updateOrderStatus
+// Called from the page code after payment succeeds or fails.
+// Finds the CMS row by cmsItemId and updates its status field.
+// =============================================================================
+export async function updateOrderStatus(cmsItemId, status) {
+  try {
+    // Fetch the existing record first (wix-data update requires full object)
+    const item = await wixData.get(COLLECTION, cmsItemId, { suppressAuth: true });
+    if (!item) throw new Error('Order not found in CMS: ' + cmsItemId);
+
+    await wixData.update(
+      COLLECTION,
+      { ...item, status },
+      { suppressAuth: true }
+    );
+
+    console.log(`📝 Order ${item.orderId} status updated to: ${status}`);
+    return { success: true };
+  } catch (err) {
+    console.error('updateOrderStatus failed:', err);
+    throw new Error('Failed to update order status: ' + err.message);
+  }
+}

@@ -1,0 +1,48 @@
+import { mediaManager } from 'wix-media-backend';
+import { triggeredEmails } from 'wix-crm-backend';  // or use wix-email
+
+// Upload file from base64 and return the Wix media URL
+export async function uploadFileFromBase64(base64String, fileName, mimeType) {
+  try {
+    // Strip the data:...;base64, prefix
+    const base64Data = base64String.split(',')[1];
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    const uploadResult = await mediaManager.upload(
+      "/translation-documents",   // folder in Wix Media
+      buffer,
+      fileName,
+      {
+        mediaOptions: { mimeType: mimeType },
+        metadataOptions: { isPrivate: true, isVisitorUpload: false }
+      }
+    );
+
+    return uploadResult.fileUrl;
+  } catch (err) {
+    console.error("File upload failed:", err);
+    return "";
+  }
+}
+
+// Send admin email notification on new order
+export async function sendOrderNotification(order) {
+  try {
+    // Option A — using Wix Triggered Emails (set up template in Wix dashboard first)
+    await triggeredEmails.emailContact("newOrderTemplate", order.email, {
+      variables: {
+        fullName:       order.fullName,
+        email:          order.email,
+        phone:          order.phone,
+        documentType:   order.documentType,
+        sourceLanguage: order.sourceLanguage,
+        targetLanguage: order.targetLanguage,
+        urgency:        order.urgency,
+        status:         order.status
+      }
+    });
+    console.log("✅ Email notification sent");
+  } catch (err) {
+    console.error("❌ Email sending failed:", err);
+  }
+}

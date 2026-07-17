@@ -1,0 +1,50 @@
+import { checkout } from "wix-ecom-backend";
+
+// Move configuration constants outside the function for better maintenance
+const CATALOG_CONFIG = {
+    APP_ID: "215238eb-22a5-4c36-9e7b-e7c08025e04e",
+    PRODUCT_IDS: {
+        "20 €": "13cba5a0-5990-48a6-8ac1-a3ec14667408",
+        "40 €": "de6ac936-c77b-41be-b023-263e2c34042f"
+    }
+};
+
+export async function createOrder(orderData) {
+    try {
+        // 1. Normalize price to string for consistent lookup
+        const priceKey = orderData?.total?.toString();
+        const catalogItemId = CATALOG_CONFIG.PRODUCT_IDS[priceKey];
+
+        // 2. Validate that we have a matching product for this price
+        if (!catalogItemId) {
+            throw new Error(`Invalid price point: ${priceKey}. No matching catalog item found.`);
+        }
+
+        // 3. Construct Checkout Options
+        const options = {
+            lineItems: [{
+                quantity: 1,
+                catalogReference: {
+                    appId: CATALOG_CONFIG.APP_ID,
+                    catalogItemId: catalogItemId
+                }
+            }],
+            channelType: "WEB"
+        };
+
+        // 4. Execute Checkout Creation
+        const result = await checkout.createCheckout(options);
+        
+        console.log(`[Checkout Success] Created for Price: ${priceKey}, Item: ${catalogItemId}`);
+        return result;
+
+    } catch (error) {
+        // 5. Professional Error Logging
+        console.error("[Checkout Backend Error]", {
+            message: error.message,
+            orderData: orderData
+        });
+        
+        throw new Error(`Unable to process checkout: ${error.message}`);
+    }
+}
