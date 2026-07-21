@@ -2013,6 +2013,54 @@
       }
     });
 
+    // ─── ERROR BANNER ──────────────────────────────────────────────────
+    function showError(message) {
+      let errDiv = document.getElementById('errorBanner');
+      if (!errDiv) {
+        errDiv = document.createElement('div');
+        errDiv.id = 'errorBanner';
+        errDiv.style.cssText = 'background: #ffe6e6; color: #d93025; padding: 1rem; border-radius: 8px; border: 1px solid #f28b82; margin-bottom: 1rem; font-weight: bold; text-align: center;';
+        document.querySelector('.page-body').prepend(errDiv);
+      }
+      errDiv.textContent = message;
+      errDiv.style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function hideError() {
+      let errDiv = document.getElementById('errorBanner');
+      if (errDiv) errDiv.style.display = 'none';
+    }
+
+    // ─── VELO MESSAGES ──────────────────────────────────────────────────
+    let uploadUrlResolver = null;
+    let uploadUrlRejecter = null;
+
+    window.addEventListener("message", (event) => {
+      const data = event.data;
+      if (data?.type === "ERROR") {
+        showError(data.message || "Une erreur est survenue.");
+        if (uploadUrlRejecter) uploadUrlRejecter(new Error(data.message));
+        
+        let btn = document.getElementById('finalSubmitBtn');
+        if (btn) {
+          btn.innerText = "Commander";
+          btn.disabled = false;
+        }
+      } else if (data?.type === "UPLOAD_URL_RESPONSE") {
+        if (uploadUrlResolver) uploadUrlResolver(data.uploadUrl);
+      }
+    });
+
+    async function requestUploadUrl(mimeType) {
+      return new Promise((resolve, reject) => {
+        uploadUrlResolver = resolve;
+        uploadUrlRejecter = reject;
+        window.parent.postMessage({ type: "REQUEST_UPLOAD_URL", mimeType }, "*");
+        setTimeout(() => reject(new Error("Délai d'attente dépassé pour l'URL d'upload")), 15000);
+      });
+    }
+
     // ─── NAV BUTTONS ──────────────────────────────────────────────────
     document.getElementById('gotoStep2Btn').addEventListener('click', () => {
       if (selectedDocs.length) showStep(2);
@@ -2029,48 +2077,20 @@
     });
     document.getElementById('backToStep3_4').addEventListener('click', () => showStep(3));
     document.getElementById('finalSubmitBtn').addEventListener('click', async () => {
+      hideError();
       const customer = getCustomerInfo();
       const { total, shippingEur, urgentSurcharge } = calcTotals();
-
-
-
-
-      // Convert file to base64 if uploaded
-      // let fileData = null;
-      // if (uploadedFile) {
-      //   fileData = await new Promise((resolve) => {
-      //     const reader = new FileReader();
-      //     reader.onload = () => resolve({
-      //       name: uploadedFile.name,
-      //       type: uploadedFile.type,
-      //       size: uploadedFile.size,
-      //       base64: reader.result
-      //     });
-      //     reader.readAsDataURL(uploadedFile);
-      //   });
-      // }
 
       const fileInput = document.getElementById("fileInput");
       const uploadedFile = fileInput.files[0] || null;
 
-      let fileData = null;
-
       if (uploadedFile) {
-        fileData = await new Promise((resolve) => {
-          const reader = new FileReader();
-
-          reader.onload = () => resolve({
-            name: uploadedFile.name,
-            type: uploadedFile.type,
-            size: uploadedFile.size,
-            base64: reader.result
-          });
-
-          reader.readAsDataURL(uploadedFile);
-        });
+        const MAX_MB = 10;
+        if (uploadedFile.size > MAX_MB * 1024 * 1024) {
+          showError(`Erreur: La taille du fichier dépasse la limite de ${MAX_MB} Mo.`);
+          return;
+        }
       }
-
-      console.log(fileData);
 
       const orderData = {
         fullName: customer.name,
@@ -2082,7 +2102,7 @@
         isCertified: true,
         urgency: selectedDeadline.type,
         message: customer.address,
-        uploadedFile: fileData,
+        uploadedFileUrl: "", 
         status: "new",
         createdAt: new Date().toISOString(),
         selectedItems: selectedDocs.map(d => ({
@@ -2093,19 +2113,39 @@
         })),
 
         // ─── PRICING ───────────────────────────────
-        totalPrice: total,                           // full total including shipping + urgency
-        shippingCost: shippingEur,                   // shipping cost alone
-        urgentSurcharge: urgentSurcharge,            // extra charge for urgent/express (0 if standard)
-        shippingDestination: selectedShipping.destination  // "MA Maroc" or "EU Europe"
+        totalPrice: total,
+        shippingCost: shippingEur,
+        urgentSurcharge: urgentSurcharge,
+        shippingDestination: selectedShipping.destination
       };
 
-      console.log("Total price is: ", orderData.totalPrice);
+      try {
+        if (uploadedFile) {
+          document.getElementById('finalSubmitBtn').innerText = "Téléchargement en cours...";
+          document.getElementById('finalSubmitBtn').disabled = true;
 
-      console.log("ORDER DATA:", orderData);
-      window.parent.postMessage({ type: "ORDER_SUBMIT", payload: orderData }, "*");
+          const uploadUrl = await requestUploadUrl(uploadedFile.type || "application/octet-stream");
+          
+          const formData = new FormData();
+          formData.append("file", uploadedFile);
+          
+          const res = await fetch(uploadUrl, { method: "POST", body: formData });
+          if (!res.ok) throw new Error("Échec du téléchargement du fichier.");
+          
+          const parsed = await res.json();
+          orderData.uploadedFileUrl = parsed[0].fileUrl;
+        }
 
-      /* alert("✅ Commande validée ! Un email récapitulatif vous sera envoyé."); */
+        console.log("ORDER DATA:", orderData);
+        window.parent.postMessage({ type: "ORDER_SUBMIT", payload: orderData }, "*");
+        
+        document.getElementById('finalSubmitBtn').innerText = "Redirection vers le paiement...";
 
+      } catch (err) {
+        showError(err.message);
+        document.getElementById('finalSubmitBtn').innerText = "Commander";
+        document.getElementById('finalSubmitBtn').disabled = false;
+      }
     });
 
     // ─── INIT ─────────────────────────────────────────────────────────

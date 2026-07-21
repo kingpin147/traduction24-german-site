@@ -25,6 +25,23 @@ export async function uploadFileFromBase64(base64String, fileName, mimeType) {
   }
 }
 
+// Generate an upload URL so the client browser can upload directly
+export async function getUploadUrl(mimeType) {
+  try {
+    const uploadUrlInfo = await mediaManager.generateFileUploadUrl(
+      "/translation-documents",
+      {
+        mediaOptions: { mimeType: mimeType },
+        metadataOptions: { isPrivate: true, isVisitorUpload: false }
+      }
+    );
+    return uploadUrlInfo.uploadUrl;
+  } catch (err) {
+    console.error("Failed to generate upload URL", err);
+    throw new Error("Unable to generate file upload URL");
+  }
+}
+
 // Send admin email notification on new order
 export async function sendOrderNotification(order) {
   try {

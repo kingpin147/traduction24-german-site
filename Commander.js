@@ -1,5 +1,5 @@
 import wixData from 'wix-data';
-import { uploadFileFromBase64 } from 'backend/orderHandler';
+import { getUploadUrl } from 'backend/orderHandler';
 import { contacts, triggeredEmails } from 'wix-crm-frontend';
 import { cart } from "wix-stores";
 import wixEcomFrontend from "wix-ecom-frontend";
@@ -10,24 +10,34 @@ $w.onReady(function () {
         console.log("Message received from iframe");
 
         const data = event.data;
+
+        // --- 1. Handle REQUEST_UPLOAD_URL ---
+        if (data?.type === "REQUEST_UPLOAD_URL") {
+            try {
+                const uploadUrl = await getUploadUrl(data.mimeType || "application/octet-stream");
+                $w("#html4").postMessage({ type: "UPLOAD_URL_RESPONSE", uploadUrl });
+            } catch (err) {
+                console.error("❌ Failed to get upload URL:", err);
+                $w("#html4").postMessage({ type: "ERROR", message: "Impossible de générer le lien de téléchargement." });
+            }
+            return;
+        }
+
+        // --- 2. Handle ORDER_SUBMIT ---
         if (data?.type !== "ORDER_SUBMIT") return;
 
         const order = data.payload;
         console.log("Order received:", order);
 
         try {
-            // 1. Upload file if exists
-            let uploadedFileUrl = "";
-            if (order.uploadedFile?.base64) {
-                uploadedFileUrl = await uploadFileFromBase64(
-                    order.uploadedFile.base64,
-                    order.uploadedFile.name,
-                    order.uploadedFile.type
-                );
-            }
+            // File upload logic removed since HTML component uploads directly via fetch
+            const uploadedFileUrl = order.uploadedFileUrl || "";
 
-            // 2. Build CMS record
+            // 2. Generate unique Order Number & Build CMS record
+            const orderNumber = 'T24-' + Date.now().toString(36).toUpperCase();
+
             const record = {
+                orderNumber: orderNumber,
                 fullName: order.fullName,
                 email: order.email,
                 phone: order.phone,
@@ -59,8 +69,12 @@ $w.onReady(function () {
 
             const customTextFields = [];
             customTextFields.push({
-                title: "Selected Options", // Updated title match to backend expectations
-                value: cleanNumericPrice,  // Raw, clean number string
+                title: "Selected Options", 
+                value: cleanNumericPrice,
+            });
+            customTextFields.push({
+                title: "Order ID",
+                value: orderNumber, // Used by backend events to sync status
             });
             // ───────────────────────────────────────────────────────────────────
 
@@ -74,6 +88,7 @@ $w.onReady(function () {
 
         } catch (err) {
             console.error("❌ Error in order flow:", err);
+            $w("#html4").postMessage({ type: "ERROR", message: "Erreur Velo: " + err.message });
         }
     });
 });
