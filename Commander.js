@@ -1,5 +1,5 @@
 import wixData from 'wix-data';
-import { getUploadUrl } from 'backend/orderHandler';
+import { getUploadUrl, processOrderSecurely, logErrorToDB } from 'backend/orderHandler';
 import { contacts, triggeredEmails } from 'wix-crm-frontend';
 import { cart } from "wix-stores";
 import wixEcomFrontend from "wix-ecom-frontend";
@@ -18,6 +18,7 @@ $w.onReady(function () {
                 $w("#html4").postMessage({ type: "UPLOAD_URL_RESPONSE", uploadUrl });
             } catch (err) {
                 console.error("❌ Failed to get upload URL:", err);
+                await logErrorToDB("Commander.js: getUploadUrl", "Failed to generate upload URL on frontend", err.message || err);
                 $w("#html4").postMessage({ type: "ERROR", message: "Impossible de générer le lien de téléchargement." });
             }
             return;
@@ -56,8 +57,7 @@ $w.onReady(function () {
 
             console.log(record);
 
-            await saveDataToDatabase(record);
-            sendAutomationToAdminAndUser(order, record);
+            await processOrderSecurely(order, record);
 
             console.log("Generating payment session via backend JSW...");
 
@@ -88,77 +88,9 @@ $w.onReady(function () {
 
         } catch (err) {
             console.error("❌ Error in order flow:", err);
+            await logErrorToDB("Commander.js: ORDER_SUBMIT", "Error processing order on frontend", err.message || err);
             $w("#html4").postMessage({ type: "ERROR", message: "Erreur Velo: " + err.message });
         }
     });
 });
-
-// ─── SAVE TO CMS ─────────────────────────────────────────────────────────────
-const saveDataToDatabase = async (orderDetails) => {
-    await wixData.insert("AllOrders", orderDetails);
-    console.log("✅ Saved to CMS successfully");
-};
-
-// ─── SEND EMAILS TO USER AND ADMIN ───────────────────────────────────────────
-const sendAutomationToAdminAndUser = (order, record) => {
-
-    // Build contact object for CRM lookup
-    const contactObject = {
-        name: {
-            first: order.fullName || ""
-        },
-        emails: [{
-            email: order.email,
-            primary: true
-        }],
-        phones: [{
-            phone: order.phone || "",
-            primary: true
-        }]
-    };
-
-    // Create or find existing contact, then email the user
-    contacts.appendOrCreateContact(contactObject)
-        .then((resolvedContact) => {
-            const customerContactId = resolvedContact.contactId;
-            console.log("Contact resolved. ID:", customerContactId);
-
-            return triggeredEmails.emailContact('VJmMXln', customerContactId, {
-                variables: {
-                    SITE_URL: "www.traduction24.ma"
-                }
-            });
-        })
-        .then(() => {
-            console.log("✅ User thank you email sent.");
-        })
-        .catch((err) => {
-            console.error("❌ User email flow error:", err);
-        });
-
-    // Email the admin separately
-    const adminMemberId = "f54d0cbb-3242-4182-a387-5bca0ec465e4";
-
-    triggeredEmails.emailMember('VJzPa53', adminMemberId, {
-            variables: {
-                fullName: order.fullName,
-                email: order.email,
-                phone: order.phone,
-                sourceLanguage: order.sourceLanguage,
-                targetLanguage: order.targetLanguage,
-                documentType: order.documentType,
-                isCertified: order.isCertified === true ? "Yes" : "No",
-                urgency: order.urgency,
-                message: order.message,
-                status: "new",
-                totalPrice: String(record.totalPrice) + " €",
-                submissionTime: new Date().toLocaleString("fr-FR")
-            }
-        })
-        .then(() => {
-            console.log("✅ Admin email sent.");
-        })
-        .catch((err) => {
-            console.error("❌ Admin email error:", err);
-        });
-};
+

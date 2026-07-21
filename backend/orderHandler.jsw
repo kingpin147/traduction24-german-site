@@ -1,5 +1,6 @@
 import { mediaManager } from 'wix-media-backend';
-import { triggeredEmails } from 'wix-crm-backend';  // or use wix-email
+import wixData from 'wix-data';
+import { contacts, triggeredEmails } from 'wix-crm-backend';
 
 // Upload file from base64 and return the Wix media URL
 export async function uploadFileFromBase64(base64String, fileName, mimeType) {
@@ -21,6 +22,7 @@ export async function uploadFileFromBase64(base64String, fileName, mimeType) {
     return uploadResult.fileUrl;
   } catch (err) {
     console.error("File upload failed:", err);
+    await logErrorToDB("uploadFileFromBase64", "File upload failed", err.message || err);
     return "";
   }
 }
@@ -28,38 +30,85 @@ export async function uploadFileFromBase64(base64String, fileName, mimeType) {
 // Generate an upload URL so the client browser can upload directly
 export async function getUploadUrl(mimeType) {
   try {
-    const uploadUrlInfo = await mediaManager.generateFileUploadUrl(
+    const uploadUrlInfo = await mediaManager.getUploadUrl(
       "/translation-documents",
       {
         mediaOptions: { mimeType: mimeType },
         metadataOptions: { isPrivate: true, isVisitorUpload: false }
       }
     );
-    return uploadUrlInfo.uploadUrl;
+    return uploadUrlInfo;
   } catch (err) {
     console.error("Failed to generate upload URL", err);
+    await logErrorToDB("getUploadUrl", "Failed to generate upload URL", err.message || err);
     throw new Error("Unable to generate file upload URL");
   }
 }
 
-// Send admin email notification on new order
-export async function sendOrderNotification(order) {
-  try {
-    // Option A — using Wix Triggered Emails (set up template in Wix dashboard first)
-    await triggeredEmails.emailContact("newOrderTemplate", order.email, {
-      variables: {
-        fullName:       order.fullName,
-        email:          order.email,
-        phone:          order.phone,
-        documentType:   order.documentType,
-        sourceLanguage: order.sourceLanguage,
-        targetLanguage: order.targetLanguage,
-        urgency:        order.urgency,
-        status:         order.status
-      }
-    });
-    console.log("✅ Email notification sent");
-  } catch (err) {
-    console.error("❌ Email sending failed:", err);
-  }
+// Log errors to the ErrorLogs database
+export async function logErrorToDB(context, message, details = "") {
+    try {
+        await wixData.insert("ErrorLogs", {
+            context: context,
+            message: message,
+            details: String(details),
+            timestamp: new Date()
+        }, { suppressAuth: true });
+    } catch (err) {
+        console.error("Failed to write to ErrorLogs:", err);
+    }
+}
+
+// Securely save order to database and send emails from backend
+export async function processOrderSecurely(order, record) {
+    try {
+        // 1. Insert into CMS securely (bypasses frontend permissions)
+        await wixData.insert("AllOrders", record, { suppressAuth: true });
+        console.log("✅ Saved to CMS securely from backend");
+
+        // 2. Email the user
+        const contactObject = {
+            name: { first: order.fullName || "" },
+            emails: [{ email: order.email, primary: true }],
+            phones: [{ phone: order.phone || "", primary: true }]
+        };
+
+        // Create or find existing contact
+        const resolvedContact = await contacts.appendOrCreateContact(contactObject);
+        const customerContactId = resolvedContact.contactId;
+
+        // Send email to the contact
+        await triggeredEmails.emailContact('VJmMXln', customerContactId, {
+            variables: {
+                SITE_URL: "www.traduction24.ma"
+            }
+        });
+        console.log("✅ User thank you email sent securely.");
+
+        // 3. Email the Admin
+        const adminMemberId = "f54d0cbb-3242-4182-a387-5bca0ec465e4";
+        await triggeredEmails.emailMember('VJzPa53', adminMemberId, {
+            variables: {
+                fullName: order.fullName,
+                email: order.email,
+                phone: order.phone,
+                sourceLanguage: order.sourceLanguage,
+                targetLanguage: order.targetLanguage,
+                documentType: order.documentType,
+                isCertified: order.isCertified === true ? "Yes" : "No",
+                urgency: order.urgency,
+                message: order.message,
+                status: "new",
+                totalPrice: String(record.totalPrice) + " €",
+                submissionTime: new Date().toLocaleString("fr-FR")
+            }
+        });
+        console.log("✅ Admin email sent securely.");
+
+        return { success: true };
+    } catch (err) {
+        console.error("❌ processOrderSecurely Error:", err);
+        await logErrorToDB("processOrderSecurely", "Failed to process order", err.message || err);
+        throw err;
+    }
 }

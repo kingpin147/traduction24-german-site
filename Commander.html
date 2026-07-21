@@ -2000,15 +2000,31 @@
     // ─── FILE INPUTS ──────────────────────────────────────────────────
     document.getElementById('fileInput').addEventListener('change', function () {
       if (this.files.length) {
+        const file = this.files[0];
+        if (file.size > 10 * 1024 * 1024) {
+          showError("Erreur: La taille du fichier dépasse la limite de 10 Mo.");
+          this.value = ''; // clear input
+          document.getElementById('fileNameDisplay').style.display = 'none';
+          return;
+        }
+        hideError();
         let span = document.getElementById('fileNameDisplay');
-        span.textContent = '✓ ' + this.files[0].name;
+        span.textContent = '✓ ' + file.name;
         span.style.display = 'inline-block';
       }
     });
     document.getElementById('fileInputCamera').addEventListener('change', function () {
       if (this.files.length) {
+        const file = this.files[0];
+        if (file.size > 10 * 1024 * 1024) {
+          showError("Erreur: La taille du fichier dépasse la limite de 10 Mo.");
+          this.value = ''; // clear input
+          document.getElementById('fileNameDisplay').style.display = 'none';
+          return;
+        }
+        hideError();
         let span = document.getElementById('fileNameDisplay');
-        span.textContent = '✓ ' + this.files[0].name;
+        span.textContent = '✓ ' + file.name;
         span.style.display = 'inline-block';
       }
     });

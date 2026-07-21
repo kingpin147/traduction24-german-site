@@ -6,13 +6,13 @@ This document details the recent changes applied to the project to resolve the 4
 
 The file upload process was refactored to bypass the 14MB Velo payload limit entirely by leveraging direct uploads to Wix Media.
 
-- **`Commander.html`**
-  - Added a strict 10 MB limit validation on the client side when clicking the final submit button.
+- **`Commander.html` & `Commander-2.html`**
+  - Added an instant 10MB size limit validation on the client side when selecting a file (instantly clears the input if too large).
   - Implemented a direct upload mechanism using `fetch` with a secure temporary upload URL.
   - Added a dynamic HTML `errorBanner` to display errors on the page (both client-side size limit errors and backend Velo errors).
 
 - **`backend/orderHandler.jsw`**
-  - Added a new `getUploadUrl(mimeType)` function. This function uses `wix-media-backend` (`generateFileUploadUrl()`) to securely request a temporary upload endpoint that the HTML component can use for direct uploads.
+  - Added a new `getUploadUrl(mimeType)` function (previously incorrectly referenced as `generateFileUploadUrl`). This function securely requests a temporary upload endpoint that the HTML component can use for direct uploads.
 
 ## 2. Order Syncing and Native Wix Checkout
 
@@ -30,3 +30,28 @@ The checkout flow was updated to link your Wix eCommerce orders seamlessly with 
   - Implemented `wixEcom_onOrderPaid` and `wixEcom_onOrderCanceled` listeners.
   - These functions extract the custom "Order ID" field from the Native Wix Checkout data.
   - Automatically queries the `AllOrders` CMS collection and updates the corresponding record's status to `paid` or `canceled`.
+
+## 3. Velo Security & Architecture Best Practices
+
+Refactored the codebase to adhere to strict Wix Velo security guidelines.
+
+- **Frontend Security (`Commander.js`)**:
+  - Removed all `wixData.insert` logic from the frontend to prevent unauthorized access to the `AllOrders` collection.
+  - Removed `triggeredEmails.emailMember` and `emailContact` logic from the frontend to prevent exposing sensitive Email Template IDs and the Admin Member ID to public users.
+  - Replaced frontend logic with a call to a secure backend wrapper function (`processOrderSecurely`).
+
+- **Backend Security (`backend/orderHandler.jsw`)**:
+  - Centralized database insertions using `suppressAuth: true`.
+  - Moved all automated email logic (user & admin) into the backend, protecting system variables.
+  - Cleaned up dead/malfunctioning functions (e.g., deprecated `backend/checkout.jsw`).
+
+## 4. Centralized Error Logging (`ErrorLogs`)
+
+Implemented robust system-wide error tracking.
+
+- **`backend/orderHandler.jsw`**:
+  - Created a new `logErrorToDB(context, message, details)` helper function.
+  - Automatically logs backend upload failures, URL generation failures, and CMS insertion failures silently to the `ErrorLogs` collection.
+  
+- **`backend/events.js` & `Commander.js`**:
+  - Native checkout webhook failures (e.g., failing to sync a canceled order) and frontend iframe communication errors are now caught and instantly recorded in `ErrorLogs` with the full trace.

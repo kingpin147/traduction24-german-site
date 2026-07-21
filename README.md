@@ -11,12 +11,10 @@ This repository contains the codebase for the Commander section of the Traductio
   3. Triggers automated emails to the customer and the admin.
   4. Generates a Wix Stores cart session with the calculated price and redirects the user to checkout.
 - **`backend/`**: Contains the Velo backend web modules.
-  - `orderHandler.jsw`: Handles file uploads from base64 strings and sending admin email notifications.
-  - `checkout.jsw` / `custom-checkout.jsw` / `BE_wixPay.web.js`: Additional backend files handling checkout and Wix Pay integrations.
+  - `orderHandler.jsw`: Handles secure upload URL generation for Wix Media, database inserts (`processOrderSecurely`), email automations, and error logging to the `ErrorLogs` collection.
+  - `events.js`: Listens for native Wix eCommerce events (like order paid/canceled) to synchronize checkout status back to the CMS.
 
-## Known Issues
 
-- **Large File Uploads (`413 Request Entity Too Large`)**: Currently, the system reads files as Base64 strings in the iframe and passes them to the backend. Because Wix Velo backend functions have strict payload size limits (~14MB), uploading large PDFs (like >10MB) causes a 413 error and breaks the order flow before it reaches the payment stage. **Fix required:** Implement direct-to-cloud storage uploads from the iframe or use native Wix upload mechanisms.
 
 ## Setup & Deployment
 

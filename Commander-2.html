@@ -1637,7 +1637,17 @@
         // Step 1
         function handleFile(input) {
             const f = input.files[0];
-            if (f) { document.getElementById('fn').textContent = f.name; document.getElementById('fp').classList.add('show'); }
+            if (f) {
+                if (f.size > 10 * 1024 * 1024) {
+                    alert("Erreur: La taille du fichier dépasse la limite de 10 Mo.");
+                    input.value = ''; // clear input
+                    document.getElementById('fn').textContent = '';
+                    document.getElementById('fp').classList.remove('show');
+                    return;
+                }
+                document.getElementById('fn').textContent = f.name; 
+                document.getElementById('fp').classList.add('show'); 
+            }
         }
 
         // Step 2

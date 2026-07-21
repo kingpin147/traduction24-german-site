@@ -1,4 +1,5 @@
 import wixData from 'wix-data';
+import { logErrorToDB } from 'backend/orderHandler';
 
 // =============================================================================
 // wixEcom_onOrderPaid
@@ -17,6 +18,7 @@ export async function wixEcom_onOrderPaid(event) {
         }
     } catch (err) {
         console.error("❌ Error in wixEcom_onOrderPaid:", err);
+        await logErrorToDB("wixEcom_onOrderPaid", "Error processing paid order", err.message || err);
     }
 }
 
@@ -35,6 +37,7 @@ export async function wixEcom_onOrderCanceled(event) {
         }
     } catch (err) {
         console.error("❌ Error in wixEcom_onOrderCanceled:", err);
+        await logErrorToDB("wixEcom_onOrderCanceled", "Error processing canceled order", err.message || err);
     }
 }
 
