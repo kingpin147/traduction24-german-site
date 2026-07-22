@@ -14,8 +14,8 @@ $w.onReady(function () {
         // --- 1. Handle REQUEST_UPLOAD_URL ---
         if (data?.type === "REQUEST_UPLOAD_URL") {
             try {
-                const uploadUrl = await getUploadUrl(data.mimeType || "application/octet-stream");
-                $w("#html4").postMessage({ type: "UPLOAD_URL_RESPONSE", uploadUrl });
+                const uploadUrlResponse = await getUploadUrl(data.mimeType || "application/octet-stream");
+                $w("#html4").postMessage({ type: "UPLOAD_URL_RESPONSE", uploadUrl: uploadUrlResponse.uploadUrl });
             } catch (err) {
                 console.error("❌ Failed to get upload URL:", err);
                 await logErrorToDB("Commander.js: getUploadUrl", "Failed to generate upload URL on frontend", err.message || err);
@@ -57,7 +57,10 @@ $w.onReady(function () {
 
             console.log(record);
 
-            await processOrderSecurely(order, record);
+            const processResult = await processOrderSecurely(order, record);
+            if (processResult && !processResult.success) {
+                throw new Error(processResult.error || "Failed to process order securely");
+            }
 
             console.log("Generating payment session via backend JSW...");
 

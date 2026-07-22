@@ -69,8 +69,8 @@ export async function processOrderSecurely(order, record) {
         // 2. Email the user
         const contactObject = {
             name: { first: order.fullName || "" },
-            emails: [{ email: order.email, primary: true }],
-            phones: [{ phone: order.phone || "", primary: true }]
+            emails: order.email ? [order.email] : [],
+            phones: order.phone ? [order.phone] : []
         };
 
         // Create or find existing contact
@@ -109,6 +109,6 @@ export async function processOrderSecurely(order, record) {
     } catch (err) {
         console.error("❌ processOrderSecurely Error:", err);
         await logErrorToDB("processOrderSecurely", "Failed to process order", err.message || err);
-        throw err;
+        return { success: false, error: err.message || String(err) };
     }
 }
