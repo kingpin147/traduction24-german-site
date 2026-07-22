@@ -69,8 +69,8 @@ export async function processOrderSecurely(order, record) {
         // 2. Email the user
         const contactObject = {
             name: { first: order.fullName || "" },
-            emails: order.email ? [order.email] : [],
-            phones: order.phone ? [order.phone] : []
+            emails: order.email ? [{ email: order.email, tag: "MAIN" }] : [],
+            phones: order.phone ? [{ phone: order.phone, tag: "MAIN" }] : []
         };
 
         // Create or find existing contact
@@ -98,7 +98,7 @@ export async function processOrderSecurely(order, record) {
                 isCertified: order.isCertified === true ? "Yes" : "No",
                 urgency: order.urgency,
                 message: order.message,
-                status: "new",
+                status: "unpaid",
                 totalPrice: String(record.totalPrice) + " €",
                 submissionTime: new Date().toLocaleString("fr-FR")
             }
@@ -109,6 +109,50 @@ export async function processOrderSecurely(order, record) {
     } catch (err) {
         console.error("❌ processOrderSecurely Error:", err);
         await logErrorToDB("processOrderSecurely", "Failed to process order", err.message || err);
+        return { success: false, error: err.message || String(err) };
+    }
+}
+
+import wixPayBackend from 'wix-pay-backend';
+
+// Create a Wix Pay session directly bypassing Wix Stores
+export async function createPaymentForOrder(order, record) {
+    try {
+        const payment = await wixPayBackend.createPayment({
+            items: [
+                {
+                    name: "Traduction: " + record.documentType,
+                    price: Number(record.totalPrice),
+                    quantity: 1
+                }
+            ],
+            amount: Number(record.totalPrice),
+            userInfo: {
+                firstName: record.fullName,
+                email: record.email,
+                phone: record.phone
+            }
+        });
+
+        // Link the paymentId to the order record in the database
+        const results = await wixData.query("AllOrders")
+            .eq("orderNumber", record.orderNumber)
+            .limit(1)
+            .find({ suppressAuth: true });
+
+        if (results.items.length > 0) {
+            const item = results.items[0];
+            item.paymentId = payment.id;
+            await wixData.update("AllOrders", item, { suppressAuth: true });
+            console.log(`✅ Linked paymentId ${payment.id} to order ${record.orderNumber}`);
+        } else {
+            console.log(`⚠️ Order ${record.orderNumber} not found to link paymentId.`);
+        }
+
+        return { success: true, payment: payment };
+    } catch (err) {
+        console.error("❌ Failed to create Wix Pay payment:", err);
+        await logErrorToDB("createPaymentForOrder", "Failed to create payment", err.message || err);
         return { success: false, error: err.message || String(err) };
     }
 }

@@ -1,8 +1,6 @@
 import wixData from 'wix-data';
-import { getUploadUrl, processOrderSecurely, logErrorToDB } from 'backend/orderHandler';
-import { contacts, triggeredEmails } from 'wix-crm-frontend';
-import { cart } from "wix-stores";
-import wixEcomFrontend from "wix-ecom-frontend";
+import { getUploadUrl, processOrderSecurely, logErrorToDB, createPaymentForOrder } from 'backend/orderHandler';
+import wixPayFrontend from 'wix-pay-frontend';
 
 $w.onReady(function () {
 
@@ -50,7 +48,7 @@ $w.onReady(function () {
                 urgency: order.urgency,
                 message: order.message,
                 uploadedFile: uploadedFileUrl,
-                status: "new",
+                status: "unpaid",
                 createdAt: new Date(),
                 totalPrice: order.totalPrice,
             };
@@ -64,30 +62,23 @@ $w.onReady(function () {
 
             console.log("Generating payment session via backend JSW...");
 
-            // ─── OPTIMIZED FOR BACKEND SPI ─────────────────────────────────────
-            // Strip any currency symbols or extra characters to ensure a clean number string (e.g. "45.00")
-            const cleanNumericPrice = String(record.totalPrice)
-                .replace(/[^0-9.]/g, '') // Removes everything except numbers and decimals
-                .trim();
+            const paymentResult = await createPaymentForOrder(order, record);
+            if (paymentResult && !paymentResult.success) {
+                throw new Error(paymentResult.error || "Failed to create payment session");
+            }
 
-            const customTextFields = [];
-            customTextFields.push({
-                title: "Selected Options", 
-                value: cleanNumericPrice,
+            // Launch Wix Pay directly
+            const payResult = await wixPayFrontend.startPayment(paymentResult.payment.id, {
+                showThankYouPage: false
             });
-            customTextFields.push({
-                title: "Order ID",
-                value: orderNumber, // Used by backend events to sync status
-            });
-            // ───────────────────────────────────────────────────────────────────
 
-            const newCart = await cart.addProducts([{
-                productId: "de6ac936-c77b-41be-b023-263e2c34042f",
-                quantity: 1,
-                options: { choices: {}, customTextFields }
-            }]);
-
-            wixEcomFrontend.navigateToCheckoutPage(newCart._id);
+            if (payResult.status === "Successful") {
+                $w("#html4").postMessage({ type: "PAYMENT_SUCCESS" });
+            } else if (payResult.status === "Pending") {
+                $w("#html4").postMessage({ type: "PAYMENT_PENDING" });
+            } else {
+                $w("#html4").postMessage({ type: "ERROR", message: "Le paiement n'a pas été complété." });
+            }
 
         } catch (err) {
             console.error("❌ Error in order flow:", err);

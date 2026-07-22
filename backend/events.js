@@ -41,6 +41,35 @@ export async function wixEcom_onOrderCanceled(event) {
     }
 }
 
+// =============================================================================
+// wixPay_onPaymentUpdate
+// Fires when a Wix Pay payment status changes
+// =============================================================================
+export async function wixPay_onPaymentUpdate(event) {
+    console.log(`💳 wixPay_onPaymentUpdate event triggered for payment: ${event.payment.id}, status: ${event.status}`);
+
+    try {
+        if (event.status === "Successful") {
+            const results = await wixData.query("AllOrders")
+                .eq("paymentId", event.payment.id)
+                .limit(1)
+                .find({ suppressAuth: true });
+
+            if (results.items.length > 0) {
+                const item = results.items[0];
+                item.status = "paid";
+                await wixData.update("AllOrders", item, { suppressAuth: true });
+                console.log(`✅ Updated AllOrders record (Payment ID: ${event.payment.id}) to paid.`);
+            } else {
+                console.log(`⚠️ No order found in AllOrders matching Payment ID: ${event.payment.id}`);
+            }
+        }
+    } catch (err) {
+        console.error("❌ Error in wixPay_onPaymentUpdate:", err);
+        await logErrorToDB("wixPay_onPaymentUpdate", "Error processing payment update", err.message || err);
+    }
+}
+
 // ─── HELPER FUNCTIONS ────────────────────────────────────────────────────────
 
 function extractCustomOrderId(event) {
