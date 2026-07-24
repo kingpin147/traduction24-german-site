@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Merci pour votre commande !</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    :root {
+      --primary: #023d79;
+      --primary-light: #f5f8fd;
+      --success: #00bd61;
+      --success-light: #eefaf4;
+      --warning: #f59e0b;
+      --warning-light: #fffbeb;
+      --text-main: #1a2b40;
+      --text-muted: #6e8096;
+      --border: #e4eaf3;
+      --bg: #eef1f7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Header Section */
+    .header {
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .icon-success-main {
+      width: 56px;
+      height: 56px;
+      background: var(--success-light);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--success);
+      font-size: 1.5rem;
+      margin: 0 auto 1rem auto;
+      border: 2px solid #bbf7d0;
+    }
+
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .header p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    /* Cards */
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 1.2rem;
+    }
+
+    /* Order Info Box */
+    .order-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      text-align: center;
+      padding: 1.5rem;
+    }
+
+    .order-box .label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    .order-box .order-id {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.3rem;
+    }
+
+    .order-box .order-date {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Summary Details */
+    .doc-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .doc-row:first-of-type {
+      padding-top: 0;
+    }
+
+    .doc-name {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .doc-name i {
+      color: var(--success);
+    }
+
+    .doc-price {
+      font-weight: 700;
+      color: var(--success);
+      font-size: 0.95rem;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      padding: 1.2rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .meta-item {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .meta-item strong {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 1.2rem;
+    }
+
+    .total-row .total-label {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .total-row .total-price {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--success);
+    }
+
+    /* Payment Specific Boxes */
+    .alert-box {
+      border-radius: 12px;
+      padding: 1.2rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      display: none; /* Hidden by default */
+    }
+
+    .alert-box.warning {
+      background: var(--warning-light);
+      border: 1px solid #fde68a;
+    }
+
+    .alert-box.success {
+      background: var(--success-light);
+      border: 1px solid #bbf7d0;
+    }
+
+    .alert-icon {
+      font-size: 1.2rem;
+      margin-top: 0.2rem;
+    }
+
+    .alert-box.warning .alert-icon { color: var(--warning); }
+    .alert-box.success .alert-icon { color: var(--success); }
+
+    .alert-content h4 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.4rem;
+    }
+
+    .alert-content p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .alert-content .bank-details {
+      margin-top: 0.8rem;
+      background: rgba(255, 255, 255, 0.6);
+      padding: 0.8rem;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: var(--primary);
+    }
+
+    /* Next Steps */
+    .steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+
+    .step-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--primary-light);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .step-content h4 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .step-content h4 .step-badge {
+      background: var(--success-light);
+      color: var(--success);
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 10px;
+    }
+
+    .step-content p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="icon-success-main">
+        <i class="fas fa-check"></i>
+      </div>
+      <h1>Merci pour votre commande !</h1>
+      <p>Votre commande a été enregistrée avec succès et sera traitée.</p>
+    </div>
+
+    <!-- Order Details Box -->
+    <div class="card order-box">
+      <div class="label">NUMÉRO DE COMMANDE</div>
+      <div class="order-id" id="val-orderId">T24-CHARGEMENT...</div>
+      <div class="order-date" id="val-orderDate">...</div>
+    </div>
+
+    <!-- Summary Box -->
+    <div class="card">
+      <h3 class="card-title">Documents commandés</h3>
+      
+      <div id="documents-container">
+        <!-- Dynamically populated -->
+      </div>
+
+      <div class="meta-grid">
+        <div class="meta-item">Langues: <strong id="val-langs">...</strong></div>
+        <div class="meta-item">Délai: <strong id="val-time">...</strong></div>
+        <div class="meta-item">Destination d'expédition: <strong id="val-dest">...</strong></div>
+        <div class="meta-item">E-mail: <strong id="val-email">...</strong></div>
+      </div>
+
+      <div class="total-row">
+        <div class="total-label">Montant total</div>
+        <div class="total-price" id="val-total">... €</div>
+      </div>
+    </div>
+
+    <!-- Payment Conditional Boxes -->
+    <div id="box-bank-transfer" class="alert-box warning">
+      <div class="alert-icon"><i class="fas fa-shield-alt"></i></div>
+      <div class="alert-content">
+        <h4>Information importante sur le virement</h4>
+        <p>Veuillez nous envoyer une preuve du virement par e-mail ou WhatsApp. Le traitement de votre traduction ne commencera qu'après réception du justificatif.</p>
+        <div class="bank-details">
+          <strong>Bénéficiaire :</strong> Traduction24<br>
+          <strong>IBAN :</strong> FR76 1234 5678 9012 3456 7890 123<br>
+          <strong>Référence :</strong> <span id="val-bankRef">...</span>
+        </div>
+        <p style="margin-top: 0.5rem; font-weight: 600; color: var(--primary);">Contact: WhatsApp au +33 6 00 00 00 00 ou e-mail à contact@traduction24.com</p>
+      </div>
+    </div>
+
+    <div id="box-paypal" class="alert-box success">
+      <div class="alert-icon"><i class="fas fa-check-circle"></i></div>
+      <div class="alert-content">
+        <h4>Paiement réussi</h4>
+        <p>Votre paiement a été validé avec succès. Nous préparons votre commande.</p>
+      </div>
+    </div>
+
+    <!-- Next Steps Box -->
+    <div class="card">
+      <h3 class="card-title">Prochaines étapes</h3>
+      <div class="steps-list">
+        
+        <div class="step-item">
+          <div class="step-icon"><i class="far fa-envelope"></i></div>
+          <div class="step-content">
+            <h4><span class="step-badge">1</span> Confirmation par e-mail</h4>
+            <p>Vous recevrez sous peu un e-mail de confirmation avec tous les détails de votre commande.</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-icon"><i class="far fa-file-pdf"></i></div>
+          <div class="step-content">
+            <h4><span class="step-badge">2</span> Traduction en PDF</h4>
+            <p>Dès que la traduction sera prête, vous recevrez la version numérique par e-mail en PDF.</p>
+          </div>
+        </div>
+
+        <div class="step-item" id="step-delivery" style="display: flex;">
+          <div class="step-icon"><i class="fas fa-truck"></i></div>
+          <div class="step-content">
+            <h4><span class="step-badge">3</span> Original par courrier</h4>
+            <p>L'original assermenté vous sera envoyé par courrier recommandé à votre adresse.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Labels mappings
+    const processingLabels = {
+      standard: 'Standard (10 jours)',
+      urgent:   'Urgent (3 jours)',
+      urgent24: 'Urgent 24h',
+    };
+
+    const destinationLabels = {
+      morocco: 'Maroc',
+      europe:  'Europe',
+      digital: 'Numérique (PDF seul)'
+    };
+
+    // Format Date
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('fr-FR', {
+        day: 'numeric', month: 'long', year: 'numeric'
+      }) + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Process Message
+    window.addEventListener("message", (event) => {
+      const data = event.data;
+      if (data && data.type === 'ORDER_DATA') {
+        const order = data.payload;
+
+        // Basic Info
+        document.getElementById('val-orderId').textContent = order.orderId || '...';
+        document.getElementById('val-bankRef').textContent = order.orderId || '...';
+        document.getElementById('val-orderDate').textContent = formatDate(order.createdAt || order.paidAt || new Date().toISOString());
+
+        // Meta Info
+        document.getElementById('val-langs').innerHTML = `${order.sourceLang || '...'} &rarr; ${order.targetLang || '...'}`;
+        document.getElementById('val-time').textContent = processingLabels[order.processingTime] || order.processingTime || '...';
+        document.getElementById('val-dest').textContent = destinationLabels[order.destination] || order.destination || '...';
+        document.getElementById('val-email').textContent = (order.contact && order.contact.email) ? order.contact.email : '...';
+
+        // Documents
+        const docsContainer = document.getElementById('documents-container');
+        docsContainer.innerHTML = '';
+        if (order.documents && order.documents.length > 0) {
+          order.documents.forEach(doc => {
+            const row = document.createElement('div');
+            row.className = 'doc-row';
+            row.innerHTML = `
+              <div class="doc-name"><i class="far fa-file-alt"></i> ${doc.name}</div>
+              <div class="doc-price">${doc.eur || doc.price || 0} €</div>
+            `;
+            docsContainer.appendChild(row);
+          });
+        }
+
+        // Total
+        const total = order.pricing && order.pricing.total ? order.pricing.total : (order.totalPrice || '0');
+        document.getElementById('val-total').textContent = `${total} €`;
+
+        // Payment conditional logic
+        const isPaid = order.status === 'paid' || order.paymentMethod === 'paypal' || order.paymentMethod === 'stripe';
+        
+        if (isPaid) {
+          document.getElementById('box-paypal').style.display = 'flex';
+          document.getElementById('box-bank-transfer').style.display = 'none';
+        } else {
+          document.getElementById('box-paypal').style.display = 'none';
+          document.getElementById('box-bank-transfer').style.display = 'flex';
+        }
+
+        // Hide shipping step if digital only
+        if (order.destination === 'digital') {
+          document.getElementById('step-delivery').style.display = 'none';
+        }
+        
+        // Let parent know to resize iframe
+        setTimeout(() => {
+          if (window.parent) {
+            window.parent.postMessage({ type: 'RESIZE', height: document.body.scrollHeight + 50 }, '*');
+          }
+        }, 100);
+      }
+    });
+
+    // Test preview when opening locally directly
+    if (window.self === window.top) {
+      setTimeout(() => {
+        window.postMessage({
+          type: 'ORDER_DATA',
+          payload: {
+            orderId: 'T24-MRXB161N-HW7',
+            status: 'pending',
+            createdAt: '2026-07-23T10:24:00Z',
+            sourceLang: 'Français',
+            targetLang: 'Allemand',
+            processingTime: 'standard',
+            destination: 'europe',
+            contact: { email: 'client@example.com' },
+            pricing: { total: 40 },
+            documents: [
+              { name: 'Certificats scolaires / Bulletins', eur: 20 }
+            ]
+          }
+        }, '*');
+      }, 500);
+    }
+  </script>
+</body>
+</html>

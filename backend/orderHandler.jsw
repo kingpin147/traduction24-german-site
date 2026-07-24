@@ -77,10 +77,20 @@ export async function processOrderSecurely(order, record) {
         const resolvedContact = await contacts.appendOrCreateContact(contactObject);
         const customerContactId = resolvedContact.contactId;
 
+        const paymentNotice = `Information sur le paiement :\nSi vous avez réglé en ligne (PayPal ou Carte), votre paiement est validé.\nSi vous avez choisi le Virement Bancaire, veuillez effectuer le virement avec la référence ${record.orderNumber || ""}.`;
+
         // Send email to the contact
         await triggeredEmails.emailContact('VJmMXln', customerContactId, {
             variables: {
-                SITE_URL: "www.traduction24.ma"
+                SITE_URL: "www.traduction24.ma",
+                clientName: order.fullName || "",
+                orderNumber: record.orderNumber || "",
+                totalAmount: String(record.totalPrice) + " €",
+                sourceLanguage: order.sourceLanguage || "",
+                targetLanguage: order.targetLanguage || "",
+                documentType: order.documentType || "",
+                urgency: order.urgency || "",
+                paymentText: paymentNotice
             }
         });
         console.log("✅ User thank you email sent securely.");

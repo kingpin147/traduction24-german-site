@@ -3,47 +3,14 @@
 // Paste this into the CODE tab of your /thank-you page.
 // Wix Editor → navigate to your Thank You page → Page Code tab
 //
-// REQUIRED: Add these elements to your Thank You page in the Wix Editor
-// and give them the exact IDs listed below:
-//
-//  Text elements:
-//    #txtOrderId         — "Order #T24-XXXXXX"
-//    #txtClientName      — client's full name
-//    #txtEmail           — client's email
-//    #txtTelephone       — client's phone
-//    #txtDeliveryAddress — delivery address
-//    #txtSourceLang      — source language
-//    #txtTargetLang      — target language
-//    #txtProcessingTime  — processing time label
-//    #txtDestination     — destination label
-//    #txtTotal           — grand total e.g. "$40"
-//    #txtPaidAt          — payment date/time
-//    #txtUploadedFile    — uploaded filename (or "None")
-//    #txtDocumentsList   — comma-separated document names
-//    #txtStatus          — "Paid" / "Pending"
-//
-//  Containers (optional — hide/show based on status):
-//    #boxSuccess         — shown when status is 'paid'
-//    #boxPending         — shown when status is 'pending'
+// REQUIRED: Add an HTML component to your Thank You page in the Wix Editor,
+// set its code to the contents of `ThankYou.html`, and give it the exact ID:
+//    #htmlThankYou
 // =============================================================================
 
 import { session } from 'wix-storage';
 import wixLocation from 'wix-location';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-const processingLabels = {
-  standard: 'Standard (10 days)',
-  urgent:   'Urgent (3 days)',
-  urgent24: 'Urgent 24h',
-};
-
-const destinationLabels = {
-  morocco: 'Morocco',
-  europe:  'EU Europe',
-};
-
-// ── Page ready ────────────────────────────────────────────────────────────────
 $w.onReady(function () {
 
   // Read order from session storage
@@ -67,54 +34,25 @@ $w.onReady(function () {
 
   console.log('%c✅ Thank You page — order loaded', 'color:#00BD61;font-weight:bold;', order);
 
-  const { orderId, contact, documents, uploadedFile, sourceLang, targetLang,
-          processingTime, destination, pricing, paidAt, status } = order;
+  // Send data to the custom HTML component
+  // We use a small timeout to ensure the HTML iframe has fully loaded its internal script
+  setTimeout(() => {
+    try {
+      $w('#htmlThankYou').postMessage({ type: 'ORDER_DATA', payload: order });
+    } catch (err) {
+      console.error('Failed to send order data to HTML component. Ensure the HTML element ID is #htmlThankYou', err);
+    }
+  }, 500);
 
-  // ── Populate text elements ─────────────────────────────────────────────────
-
-  // Safe setter — only sets if element exists on the page
-  const setText = (id, value) => {
-    try { $w(id).text = String(value || ''); } catch (_) {}
-  };
-  const show = (id) => { try { $w(id).show(); } catch (_) {} };
-  const hide = (id) => { try { $w(id).hide(); } catch (_) {} };
-
-  setText('#txtOrderId',         `Order #${orderId}`);
-  setText('#txtClientName',      contact.name);
-  setText('#txtEmail',           contact.email);
-  setText('#txtTelephone',       contact.telephone);
-  setText('#txtDeliveryAddress', contact.deliveryAddress);
-  setText('#txtSourceLang',      sourceLang);
-  setText('#txtTargetLang',      targetLang);
-  setText('#txtProcessingTime',  processingLabels[processingTime] || processingTime);
-  setText('#txtDestination',     destinationLabels[destination]   || destination);
-  setText('#txtTotal',           `$${pricing.total}`);
-  setText('#txtUploadedFile',    uploadedFile ? uploadedFile.name : 'No file uploaded');
-  setText('#txtStatus',          status === 'paid' ? '✅ Paid' : '⏳ Pending');
-
-  // Documents list
-  if (documents && documents.length > 0) {
-    const docList = documents.map(d => `${d.name} ($${d.eur})`).join(', ');
-    setText('#txtDocumentsList', docList);
-  }
-
-  // Payment date
-  if (paidAt) {
-    const d = new Date(paidAt);
-    setText('#txtPaidAt', d.toLocaleString('en-US', {
-      year: 'numeric', month: 'long', day: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-    }));
-  }
-
-  // Show/hide status boxes
-  if (status === 'paid') {
-    show('#boxSuccess');
-    hide('#boxPending');
-  } else {
-    hide('#boxSuccess');
-    show('#boxPending');
-  }
+  // Listen for resize messages from the iframe (informational)
+  try {
+    $w('#htmlThankYou').onMessage((event) => {
+      if (event.data && event.data.type === 'RESIZE') {
+        console.log('HTML Component requested height:', event.data.height);
+        // $w('#htmlThankYou').height = event.data.height; // Uncomment if your Wix layout supports dynamic resizing
+      }
+    });
+  } catch (e) {}
 
   // ── Optionally clear session after reading (uncomment if desired) ──────────
   // session.removeItem('translation24_order');

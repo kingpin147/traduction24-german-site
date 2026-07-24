@@ -1,0 +1,129 @@
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #eef1f7; padding: 20px; font-family: 'Segoe UI', Arial, sans-serif; color: #1a2b40;">
+    <tr>
+      <td align="center">
+        <!-- Main Email Container -->
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin: 20px 0;">
+          
+          <!-- Header -->
+          <tr>
+            <td align="center" style="padding: 40px 20px 20px 20px; background-color: #ffffff;">
+              <div style="width: 56px; height: 56px; background-color: #eefaf4; border: 2px solid #bbf7d0; border-radius: 50%; display: inline-block; line-height: 56px; color: #00bd61; font-size: 24px; font-weight: bold; text-align: center;">
+                &check;
+              </div>
+              <h1 style="color: #023d79; font-size: 24px; margin: 20px 0 10px 0;">Merci pour votre commande, ${clientName} !</h1>
+              <p style="color: #6e8096; font-size: 16px; margin: 0;">Votre commande a été enregistrée avec succès et sera traitée.</p>
+            </td>
+          </tr>
+
+          <!-- Order Summary Box -->
+          <tr>
+            <td style="padding: 20px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;">
+                <tr>
+                  <td align="center" style="padding: 20px;">
+                    <p style="color: #6e8096; font-size: 12px; font-weight: bold; text-transform: uppercase; margin: 0 0 5px 0;">NUMÉRO DE COMMANDE</p>
+                    <p style="color: #023d79; font-size: 24px; font-weight: bold; margin: 0;">${orderNumber}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Details Table -->
+          <tr>
+            <td style="padding: 0 20px;">
+              <h3 style="color: #023d79; font-size: 18px; margin: 0 0 15px 0; border-bottom: 1px solid #e4eaf3; padding-bottom: 10px;">Détails de la commande</h3>
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 15px;">
+                <tr>
+                  <td style="padding: 10px 0; border-bottom: 1px solid #e4eaf3; color: #1a2b40; font-size: 15px;">
+                    <strong>Documents :</strong> ${documentType}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; border-bottom: 1px solid #e4eaf3; color: #1a2b40; font-size: 15px;">
+                    <strong>Langues :</strong> ${sourceLanguage} &rarr; ${targetLanguage}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; border-bottom: 1px solid #e4eaf3; color: #1a2b40; font-size: 15px;">
+                    <strong>Délai :</strong> ${urgency}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 15px 0; color: #023d79; font-size: 18px; font-weight: bold;">
+                    Montant total : <span style="color: #00bd61; float: right;">${totalAmount}</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- PayPal Success Notice (For Paid Template) -->
+          <tr>
+            <td style="padding: 0 20px 20px 20px;">
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #eefaf4; border: 1px solid #bbf7d0; border-radius: 8px;">
+                <tr>
+                  <td style="padding: 15px;">
+                    <h4 style="color: #00bd61; margin: 0 0 10px 0; font-size: 16px;">Paiement réussi</h4>
+                    <p style="color: #1a2b40; font-size: 14px; margin: 0; line-height: 1.5;">Votre paiement a été validé avec succès. Nous préparons votre commande avec le plus grand soin.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Next Steps -->
+          <tr>
+            <td style="padding: 20px; background-color: #f8fafc; border-top: 1px solid #e4eaf3;">
+              <h3 style="color: #023d79; font-size: 18px; margin: 0 0 15px 0;">Prochaines étapes</h3>
+              
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 15px;">
+                <tr>
+                  <td width="30" valign="top">
+                    <div style="background-color: #e0f2fe; color: #0284c7; width: 24px; height: 24px; border-radius: 50%; text-align: center; line-height: 24px; font-size: 12px; font-weight: bold;">1</div>
+                  </td>
+                  <td valign="top" style="padding-left: 10px;">
+                    <strong style="color: #023d79; font-size: 15px;">Confirmation par e-mail</strong>
+                    <p style="color: #6e8096; font-size: 14px; margin: 5px 0 0 0;">Ceci est votre e-mail de confirmation avec tous les détails.</p>
+                  </td>
+                </tr>
+              </table>
+
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 15px;">
+                <tr>
+                  <td width="30" valign="top">
+                    <div style="background-color: #e0f2fe; color: #0284c7; width: 24px; height: 24px; border-radius: 50%; text-align: center; line-height: 24px; font-size: 12px; font-weight: bold;">2</div>
+                  </td>
+                  <td valign="top" style="padding-left: 10px;">
+                    <strong style="color: #023d79; font-size: 15px;">Traduction en PDF</strong>
+                    <p style="color: #6e8096; font-size: 14px; margin: 5px 0 0 0;">Dès que la traduction sera prête, vous recevrez la version numérique en PDF.</p>
+                  </td>
+                </tr>
+              </table>
+
+              <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td width="30" valign="top">
+                    <div style="background-color: #e0f2fe; color: #0284c7; width: 24px; height: 24px; border-radius: 50%; text-align: center; line-height: 24px; font-size: 12px; font-weight: bold;">3</div>
+                  </td>
+                  <td valign="top" style="padding-left: 10px;">
+                    <strong style="color: #023d79; font-size: 15px;">Original par courrier</strong>
+                    <p style="color: #6e8096; font-size: 14px; margin: 5px 0 0 0;">L'original assermenté vous sera envoyé par courrier recommandé à votre adresse.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding: 20px; background-color: #023d79; color: #ffffff;">
+              <p style="margin: 0 0 10px 0; font-size: 14px;">Besoin d'aide ? Contactez-nous sur WhatsApp au <strong>+33 6 00 00 00 00</strong></p>
+              <p style="margin: 0; font-size: 12px; color: #9aaabf;">© 2026 Traduction24. Tous droits réservés.</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
